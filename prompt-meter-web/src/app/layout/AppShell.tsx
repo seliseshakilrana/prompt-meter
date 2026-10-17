@@ -2,6 +2,7 @@ import { Activity, PanelLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import { navItems } from "./navItems";
 import { NotificationsMenu } from "./NotificationsMenu";
 import { UserMenu } from "./UserMenu";
@@ -81,6 +82,7 @@ export function AppShell({ activePath, children, onNavigate }: { activePath: str
             </div>
           ) : null}
           <div className="topbar-spacer" />
+          <ThemeSwitcher />
           <LanguageSwitcher />
           <NotificationsMenu />
           <UserMenu onNavigate={onNavigate} />

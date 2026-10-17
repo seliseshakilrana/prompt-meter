@@ -27,10 +27,38 @@
   --avatar-surface: #c0c9d1;
   --avatar-text: #262626;
   --radius: 0.5rem;
+  color-scheme: light;
 }
 
+/* Explicit dark theme via class or attribute */
+:root.dark,
+[data-theme="dark"] {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --popover: 222.2 84% 4.9%;
+  --primary: 218 75% 45%;
+  --primary-foreground: 0 0% 96%;
+  --secondary: 217.2 32.6% 17.5%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --high-emphasis: 0 0% 96%;
+  --low-emphasis: 0 0% 62%;
+  --success-bg: 146 40% 16%;
+  --success-fg: 146 60% 75%;
+  --warning-bg: 40 50% 18%;
+  --warning-fg: 43 90% 70%;
+  color-scheme: dark;
+}
+
+/* Automatic fallback for system dark mode when no explicit light theme is selected */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light):not([data-theme="light"]) {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -51,6 +79,7 @@
     --success-fg: 146 60% 75%;
     --warning-bg: 40 50% 18%;
     --warning-fg: 43 90% 70%;
+    color-scheme: dark;
   }
 }
 
@@ -145,7 +174,7 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 .pill-warn { background: hsl(var(--warning-bg)); color: hsl(var(--warning-fg)); }
 .pill-neutral { background: hsl(var(--secondary)); color: hsl(var(--muted-foreground)); }
 
-pre { background: hsl(var(--foreground)); border-radius: var(--radius); color: hsl(var(--background)); overflow: auto; padding: 16px; }
+pre { background: hsl(var(--secondary)); border: 1px solid hsl(var(--border)); border-radius: var(--radius); color: hsl(var(--foreground)); overflow: auto; padding: 16px; }
 .primary-button, .icon-button { align-items: center; border: 0; border-radius: var(--radius); display: inline-flex; gap: 8px; min-height: 40px; padding: 0 13px; transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease; }
 .primary-button { background: hsl(var(--primary)); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); color: hsl(var(--primary-foreground)); font-weight: 600; }
 .primary-button:hover:not(:disabled) { box-shadow: 0 4px 10px rgba(15, 23, 42, 0.16); }
