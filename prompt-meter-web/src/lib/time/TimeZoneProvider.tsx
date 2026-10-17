@@ -42,7 +42,15 @@ export function TimeZoneProvider({ children }: { children: ReactNode }) {
 
 export function useTimeZone(): TimeZoneValue {
   const context = useContext(TimeZoneContext);
-  if (!context) throw new Error("useTimeZone must be used within TimeZoneProvider");
+  if (!context) {
+    const browserTimeZone = getBrowserTimeZone();
+    return {
+      browserTimeZone,
+      override: undefined,
+      setOverride: () => {},
+      timeZone: browserTimeZone
+    };
+  }
   return context;
 }
 
