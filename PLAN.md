@@ -16,13 +16,10 @@
 | What can be measured | Tools running on an **API key**: Claude Code (`ANTHROPIC_BASE_URL`), Codex (custom `base_url`), Antigravity CLI (`GOOGLE_GEMINI_BASE_URL`). Subscription sign-ins (Claude Pro/Max, ChatGPT, Google) can't be proxied. Those use manual entry and optional quota snapshots. |
 | Antigravity | Through the proxy when `agy` runs on a Gemini API key. Manual entry when signed in with Google, and for the desktop app. See [Antigravity](#antigravity-verified-2026-10-17). |
 | Platform | SELISE Blocks project `D056c99a5cd2a47b4bcf702d8874cf280` (dev, `https://dbbvxg-eptqw.slsblx.com`), deployed from `seliseshakilrana/prompt-meter` |
-
-## Open questions (proposed defaults)
-
-1. **How to label cost for subscription usage that gets entered by hand.** Default: show it as "API-equivalent cost", in a different style from real spend.
-2. **How personal teams get created.** Default: on first login, the portal creates a personal organization for the user if they don't have one. This needs testing in Phase 0.
-3. **Data when someone leaves a team or a key is revoked.** Default: keep their events, which still count toward team history. They stop being able to see team data, and the revoked key is rejected from then on.
-4. **Timezone for daily totals.** Default: UTC.
+| Subscription usage | Entered by hand and labeled **Manual** everywhere it appears (entries, charts, totals) |
+| Personal team | Created automatically on a user's first login if they don't have one |
+| Leaving a team / revoked key | Their past events are kept and still count toward team history. They lose access to team data, and a revoked key is rejected from then on. |
+| Time | Everything is **stored and counted in UTC**. The portal **shows dates and times in the viewer's local timezone**, so "today" and daily charts follow the viewer's own day. |
 
 ---
 
@@ -47,7 +44,7 @@ Tools (API-key mode)
               Blocks Data (schemas + row/column access rules)
                                   ▲
               Blocks Workflow: scheduled rollup (e.g. every 5 min)
-               • rebuilds UserDaily + TeamDaily from UsageEvent
+               • rebuilds UserHourly + TeamHourly from UsageEvent
                                   ▲
               Portal (React, blocks new web, Blocks login) + manual entry
 ```
@@ -59,8 +56,8 @@ Why the work is split this way: the Blocks workflow guide says workflows are not
 | Schema | Fields |
 |---|---|
 | **UsageEvent** | eventId (provider response id, e.g. `msg_…`, **unique index**), userId, teamId, tool, provider, model (taken from the **response**), sessionId, promptId, callIndex, totalInputTokens, uncachedInputTokens, cacheReadTokens, cacheWrite5mTokens, cacheWrite1hTokens, outputTokens, thinkingTokens, serverToolRequests, speed, costUsd, pricingStatus (`priced` / `unpriced`), promptPreview, projectTag, occurredAt (collector), receivedAt (server) |
-| **UserDaily** | userId, teamId, date (UTC), tool, model, token totals, costUsd, eventCount, promptCount |
-| **TeamDaily** | teamId, date (UTC), tool, model, token totals, costUsd, eventCount |
+| **UserHourly** | userId, teamId, hourStart (UTC, top of the hour), tool, model, source (`proxy` / `manual`), token totals, costUsd, eventCount, promptCount |
+| **TeamHourly** | teamId, hourStart (UTC), tool, model, source, token totals, costUsd, eventCount |
 | **IngestKey** | userId, teamId, label, keyPrefix (shown, used for lookup), keyHash, sendPreview (on/off), lastUsedAt, revoked |
 | **ModelPrice** | provider, model, effectiveFrom, inputPer1M, outputPer1M, cacheReadPer1M, cacheWrite5mPer1M, cacheWrite1hPer1M, longContextThreshold, longContextInputPer1M, longContextOutputPer1M, fastMultiplier, webSearchPerRequest |
 | **Budget** | scope (user or team), scopeId, monthlyLimitUsd, alertPercent |
@@ -71,6 +68,16 @@ Rules:
 - **No duplicates:** `eventId` is unique, so a retried batch never counts twice.
 - **Ownership comes from our own fields.** Blocks adds system fields (`CreatedBy`, `OrganizationId`, …) itself, but webhook-written records won't name the person in `CreatedBy`. Ownership comes from `userId` / `teamId`, which the workflow sets from the ingest key. The collector never sends them.
 - **Usage is self-reported.** Collectors run on users' own machines, so usage can be under-counted. Budgets alert people. They don't enforce limits.
+- **Manual entries** are UsageEvents with `source: manual` and no provider `eventId`; the portal generates one. They show the **Manual** label wherever they appear.
+
+## Time and timezones
+
+- **Stored in UTC:** every timestamp (`occurredAt`, `receivedAt`, `hourStart`, `resetsAt`) is UTC.
+- **Totals are hourly, not daily.** The rollups hold one row per **UTC hour**. A UTC day doesn't line up with a local day (in Dhaka, UTC+6, a local day runs 18:00–18:00 UTC), so daily rows in UTC would put the wrong usage into "today".
+- **The portal builds local days.** It takes the viewer's timezone from the browser and groups hourly rows into local days, weeks and months. Ranges such as "today" become UTC start and end times in the query.
+- **Half-hour timezones are slightly off at day edges.** Places such as India (UTC+5:30) and Nepal (UTC+5:45) have local days that don't start on a UTC hour. Hourly totals put up to 45 minutes of usage near midnight into the neighbouring day. Small enough for charts. If exact numbers are needed, count those edge hours from raw events.
+- **Budgets use calendar months in UTC,** so a team's budget is the same for everyone wherever they are. The portal shows that window in the viewer's local time.
+- **Settings:** an optional timezone override, for people whose browser timezone is wrong.
 
 ## Token normalization (per adapter)
 
@@ -113,14 +120,14 @@ Notes:
 |---|---|---|---|---|
 | UsageEvent rows | ✅ | ❌ | ✅ | ✅ |
 | `promptPreview` field | ✅ | ❌ | ❌ | ❌ |
-| UserDaily | ✅ own | ❌ | ✅ team | ✅ |
-| TeamDaily (team totals) | ✅ | ✅ | ✅ | ✅ |
+| UserHourly | ✅ own | ❌ | ✅ team | ✅ |
+| TeamHourly (team totals) | ✅ | ✅ | ✅ | ✅ |
 | IngestKey | ✅ own | ❌ | ❌ | ❌ (the ingest workflow reads it) |
 | Budget | read own | read team | read + edit team | ✅ |
 | QuotaSnapshot | ✅ own | ❌ | ✅ team | ✅ |
 | ModelPrice | read | read | read | read + edit |
 
-- Members get team totals from **TeamDaily**, and admins get per-person numbers from **UserDaily**, so neither needs raw rows for dashboards.
+- Members get team totals from **TeamHourly**, and admins get per-person numbers from **UserHourly**, so neither needs raw rows for dashboards.
 - **If column rules can't hide `promptPreview` from admins,** move previews to a separate `UsagePreview` schema (eventId, userId, preview) that only the owner can read.
 
 ## Ingest design
@@ -133,7 +140,7 @@ Notes:
   4. looks up ModelPrice by model and date, and computes `costUsd` or marks the event `unpriced`
   5. inserts the events and skips any `eventId` already stored
 - **Limits:** a maximum batch size and body size, and a rate limit per key.
-- **Rollup:** a **scheduled** workflow rebuilds UserDaily and TeamDaily for the days touched since its last run. If an event arrives late, the next run fixes the totals.
+- **Rollup:** a **scheduled** workflow rebuilds UserHourly and TeamHourly for the UTC hours touched since its last run. If an event arrives late, the next run fixes the totals.
 
 ---
 
@@ -149,7 +156,7 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
 | 0.2 | Switch on login | `blocks auth config save --oidc-enabled …` |
 | 0.3 | Switch on multi-org | `blocks iam organizations config save --multi-org-enabled` |
 | 0.4 | Create the `platform-admin`, `team-admin` and `member` roles | `blocks iam roles create --name …` |
-| 0.5 | Create the first team, and test how a personal team gets created | `blocks iam organizations create --name …` |
+| 0.5 | Create the first team, and confirm the portal will be allowed to create a personal team on a user's first login (organization permissions and signup settings) | `blocks iam organizations create --name …` |
 | 0.6 | Create the first user, as platform-admin and team-admin | `blocks iam users create …` |
 
 **Done when:** a real login works through the hosted login page.
@@ -159,7 +166,8 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
 - [ ] Scaffold with `blocks new web prompt-meter-web` (dry run, then run) and set up local HTTPS.
 - [ ] Write the schemas and access rules in `blocks/data/`, with a unique index on `UsageEvent.eventId`, then push them with `blocks data sync` (dry run, then run).
 - [ ] Load ModelPrice with current Claude, OpenAI and Gemini rates, including the cache-write, long-context, fast-mode and web-search columns.
-- [ ] Build the **My usage** overview from a small set of sample events.
+- [ ] First-login step: create the user's personal team if they don't have one.
+- [ ] Build the **My usage** overview from a small set of sample events, showing times in the viewer's local timezone. Test with the browser set to UTC+6 and UTC+5:30.
 - [ ] Decide whether to remove the leftover localization data (`todoApp` modules and test languages) from another project.
 
 **Done when:** you log in and see charts drawn from sample data.
@@ -172,7 +180,7 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
   - Do row rules on `userId` and column rules on `promptPreview` behave as planned, including for admins? If not, fall back to the `UsagePreview` schema.
   - Does a duplicate `eventId` get skipped by the unique index?
   - How many batched calls per minute can one webhook take?
-  - Can a scheduled workflow rebuild the daily totals?
+  - Can a scheduled workflow rebuild the hourly totals?
   - **If several of these fail,** replace the workflow with a small ingest service.
 - [ ] Build the ingest workflow and the rollup workflow, and import both with `blocks logic workflow import` (dry run, then run).
 - [ ] Settings page: create and revoke ingest keys, showing each key once.
@@ -196,14 +204,14 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
 - [ ] OpenAI adapter. Codex points at the proxy through its custom provider `base_url` (API-key mode). Check the normalization table against live responses.
 - [ ] Gemini adapter. Antigravity CLI (`agy`) points at the proxy with `modelProvider: "gemini"` in its `settings.json`, `GEMINI_API_KEY`, and `GOOGLE_GEMINI_BASE_URL=<proxy>`. Check the normalization table against live responses and against `agy -p … --output-format json` `usage`.
 - [ ] Test the Gemini route against the installed `agy` version. Custom-endpoint support is recent, and related fixes have shipped since.
-- [ ] A manual entry form in the portal for subscription sign-ins (Antigravity with Google, Claude Pro/Max, ChatGPT), the Antigravity desktop app, and anything else. Entries are labeled as manual.
+- [ ] A manual entry form in the portal for subscription sign-ins (Antigravity with Google, Claude Pro/Max, ChatGPT), the Antigravity desktop app, and anything else. The user enters the date and time in their local timezone, and it's stored in UTC. Entries carry the **Manual** label.
 - [ ] *(Optional)* Quota snapshots from `agy -p "/usage"` (JSON output, timestamps in UTC), posted as QuotaSnapshot. Check first that it reports quota without spending model tokens.
 
 **Done when:** a Codex session and an `agy` session using an API key both show up with token counts that match each tool's own report.
 
 ### Phase 5: Team features
 
-- [ ] **Team usage** page from TeamDaily, plus the per-person table for admins from UserDaily.
+- [ ] **Team usage** page from TeamHourly, plus the per-person table for admins from UserHourly.
 - [ ] **Team admin** page: invite members and assign roles.
 - [ ] Budgets: the rollup workflow checks budgets and sends an email (Blocks mail) when a threshold is crossed. Budgets alert people. They don't enforce limits.
 
@@ -232,13 +240,14 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
 | Workflow can't hash keys, can't read IngestKey, or writes data as an unexpected identity | Phase 2 spike. Fallback: a small ingest service. |
 | Row or column rules don't behave as planned | Phase 2 spike. Fallback: a separate `UsagePreview` schema. |
 | Workflow throughput too low for Claude Code's call volume | Batching in the proxy, and checked in the Phase 2 spike. Fallback: an ingest service. |
-| Totals drift because of late or retried events | Daily totals are rebuilt on a schedule, and retries can't create duplicates (unique `eventId`) |
+| Totals drift because of late or retried events | Hourly totals are rebuilt on a schedule, and retries can't create duplicates (unique `eventId`) |
+| Local days don't line up with UTC days | Hourly UTC totals grouped into local days in the browser. Half-hour timezones can be off by up to 45 minutes at day edges. |
 | Lost events (network down, proxy restarts) | Disk queue with retries |
 | Previews leaking secrets | Cleaned in both the proxy and the workflow, with a per-key off switch |
 | Wrong costs from missing price details | Cache-write kinds, long context, fast mode and web search are all priced. Unknown models are marked `unpriced`. |
 | Provider prices change | ModelPrice is dated by effective-from, and costs are stored on each event when it arrives |
 | Each provider counts tokens differently | Normalization table. Store whatever providers report and never re-tokenize. |
-| Subscription sign-ins can't be proxied (Claude Pro/Max, ChatGPT, Google) | Manual entry and quota snapshots, labeled as API-equivalent cost |
+| Subscription sign-ins can't be proxied (Claude Pro/Max, ChatGPT, Google) | Manual entry and quota snapshots, labeled **Manual** |
 | Usage is self-reported and can be under-counted | Documented. Budgets alert people and don't enforce limits. |
 | Antigravity's custom-endpoint route is new and could change | Phase 4 test against the installed `agy` version. Manual entry stays as the fallback. |
 | Leftover localization data from another project | Phase 1 decision |
