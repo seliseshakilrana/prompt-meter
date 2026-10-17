@@ -10,21 +10,21 @@ if (!mode) {
 }
 
 const env = readEnv(mode);
-const appDomain = env.VITE_BLOCKS_APP_DOMAIN || "";
-const redirectUri = env.VITE_BLOCKS_REDIRECT_URI || callbackUri(appDomain);
-const projectKey = env.VITE_BLOCKS_X_BLOCKS_KEY || env.VITE_BLOCKS_PROJECT_KEY || "";
+const appDomain = env.VITE_BLOCKS_APP_DOMAIN || "https://dbbvxg-eptqw.slsblx.com";
+const redirectUri = env.VITE_BLOCKS_REDIRECT_URI || callbackUri(appDomain) || "https://dbbvxg-eptqw.slsblx.com/login/callback";
+const projectKey = env.VITE_BLOCKS_X_BLOCKS_KEY || env.VITE_BLOCKS_PROJECT_KEY || "D056c99a5cd2a47b4bcf702d8874cf280";
 
 const output = [
   "# SELISE Blocks production/default configuration.",
   "# Only client-safe values belong here. Never put passwords, PTOKs, JWTs,",
   "# refresh tokens, cookies, or client secrets in VITE_-prefixed variables.",
   "",
-  `VITE_BLOCKS_API_URL=${env.VITE_BLOCKS_API_URL || ""}`,
+  `VITE_BLOCKS_API_URL=${env.VITE_BLOCKS_API_URL || "https://blocksapi.slsblx.com"}`,
   `VITE_BLOCKS_PROJECT_KEY=${projectKey}`,
   `VITE_BLOCKS_X_BLOCKS_KEY=${projectKey}`,
   `VITE_BLOCKS_APP_DOMAIN=${appDomain}`,
-  `VITE_BLOCKS_OIDC_URL=${env.VITE_BLOCKS_OIDC_URL || ""}`,
-  `VITE_BLOCKS_OIDC_CLIENT_ID=${env.VITE_BLOCKS_OIDC_CLIENT_ID || ""}`,
+  `VITE_BLOCKS_OIDC_URL=${env.VITE_BLOCKS_OIDC_URL || "https://iam.seliseblocks.com"}`,
+  `VITE_BLOCKS_OIDC_CLIENT_ID=${env.VITE_BLOCKS_OIDC_CLIENT_ID || "e140c37a-1cc3-4edc-b77b-e00edcac0f97"}`,
   `VITE_BLOCKS_OIDC_SCOPE=${env.VITE_BLOCKS_OIDC_SCOPE || "openid profile"}`,
   `VITE_BLOCKS_REDIRECT_URI=${redirectUri}`,
   "VITE_BLOCKS_HOSTED_LOGIN=true",
