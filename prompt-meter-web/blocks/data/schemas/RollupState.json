@@ -1,0 +1,31 @@
+{
+  "schemaName": "RollupState",
+  "collectionName": "RollupStates",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "name",
+      "type": "String",
+      "isArray": false,
+      "description": "State row name; the rollup uses 'hourly'."
+    },
+    {
+      "name": "lastRunStartedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC start of the last completed run (the watermark)."
+    },
+    {
+      "name": "lastRunFinishedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC finish of the last run."
+    },
+    {
+      "name": "dirtyHours",
+      "type": "DateTime",
+      "isArray": true,
+      "description": "UTC hours to rebuild, marked by manual edits and deletes."
+    }
+  ]
+}

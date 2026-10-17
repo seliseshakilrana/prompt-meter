@@ -1,0 +1,31 @@
+{
+  "schemaName": "Budget",
+  "collectionName": "Budgets",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "scope",
+      "type": "String",
+      "isArray": false,
+      "description": "user | team"
+    },
+    {
+      "name": "scopeId",
+      "type": "String",
+      "isArray": false,
+      "description": "userId or teamId."
+    },
+    {
+      "name": "monthlyLimitUsd",
+      "type": "Float",
+      "isArray": false,
+      "description": "Monthly limit in USD."
+    },
+    {
+      "name": "alertPercent",
+      "type": "Int",
+      "isArray": false,
+      "description": "Alert when spend reaches this percent of the limit."
+    }
+  ]
+}

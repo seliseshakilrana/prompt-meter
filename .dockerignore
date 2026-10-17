@@ -1,0 +1,12 @@
+.git
+.github
+.agents
+.claude
+proxy/
+infra/
+docs/
+prompt-meter-web/node_modules/
+prompt-meter-web/dist/
+prompt-meter-web/.cert/
+prompt-meter-web/.env
+prompt-meter-web/.env.local

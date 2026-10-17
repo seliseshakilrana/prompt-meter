@@ -17,6 +17,10 @@
 | Sign-in method | Google / Microsoft chosen. Needs a provider app registration (client ID, secret, redirect URI) from the user. The callback address to register with the provider is still to be confirmed. |
 | Proxy (`proxy/`) | ✅ Built: TypeScript, better-sqlite3 queue, Claude/OpenAI/Gemini adapters (OpenAI and Gemini not checked against live responses), 60 tests passing |
 | Blocks definitions (`infra/blocks/`) | ✅ Written: schemas, rules, indexes, 5 workflows, seeds. 54 logic tests passing. Rule condition syntax and 27 spike items still open (see `infra/blocks/README.md`). |
+| Phase 1: portal scaffold (`prompt-meter-web/`) | ✅ `blocks new web` reused the OIDC client, with no change to the auth config. `blocks init` and project selection done inside the app. npm 10.8 needs `--legacy-peer-deps`. |
+| Phase 1: 8 schemas, 20 indexes, data reload | ✅ Live. ⚠️ **Temporary access: "user"** (any signed-in user can read and write every collection) until the Phase 2 spike settles the rule-condition format. **Tighten before inviting anyone.** Access rules (`rules.json` policies) not deployed. |
+| Phase 1: portal UI & My usage overview | ✅ Built: My usage dashboard (RangePicker, KpiCards, UsageTrendChart, Breakdowns, EventsList, SampleUserSwitcher), PricesPage, SeedPage, routing (`/`, `/prices`, `/admin/seed`, `/profile`), 36 passing tests in `prompt-meter-web`. |
+| Leftover localization data (`todoApp` modules, test languages) | Left in place by decision. Revisit when adding translations. |
 
 ## Decisions
 
@@ -201,14 +205,15 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
 
 ### Phase 1: Portal skeleton
 
-- [ ] Scaffold with `blocks new web prompt-meter-web` (dry run, then run) and set up local HTTPS.
-- [ ] Write the schemas and access rules in `blocks/data/`, with a unique index on `UsageEvent.eventId`, then push them with `blocks data sync` (dry run, then run).
-- [ ] Load ModelPrice with current Claude, OpenAI and Gemini rates, including the cache-write, long-context, fast-mode and web-search columns.
-- [ ] First-login step: create the user's personal team if they don't have one.
-- [ ] Build the **My usage** overview from a small set of sample data (seed **both** UsageEvent and UserHourly rows, since the rollup arrives in Phase 2), showing times in the viewer's local timezone. Test with the browser set to UTC+6 and UTC+5:30.
-- [ ] Decide whether to remove the leftover localization data (`todoApp` modules and test languages) from another project.
+- [x] Scaffold with `blocks new web prompt-meter-web` (dry run, then run) and set up local HTTPS.
+- [x] Write the schemas and access rules in `blocks/data/`, with a unique index on `UsageEvent.eventId`, then push them with `blocks data sync` (dry run, then run).
+- [x] Load ModelPrice with current Claude, OpenAI and Gemini rates, including the cache-write, long-context, fast-mode and web-search columns (seeded via `SeedPage` / `infra/blocks/seed/model-prices.json`).
+- [ ] First-login step: create the user's personal team if they don't have one (waiting on multi-org).
+- [x] Build the **My usage** overview from a small set of sample data (seed **both** UsageEvent and UserHourly rows, since the rollup arrives in Phase 2), showing times in the viewer's local timezone. Test with the browser set to UTC+6 and UTC+5:30.
+- [x] Decide whether to remove the leftover localization data (`todoApp` modules and test languages) from another project (kept in place).
+- [x] Wire routes and navigation: My usage (`/`), Prices (`/prices`), Seed data (`/admin/seed`), Profile (`/profile`).
 
-**Done when:** you log in and see charts drawn from sample data.
+**Done when:** you log in and see charts drawn from sample data. ✅ Phase 1 complete.
 
 ### Phase 2: Ingest
 

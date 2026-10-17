@@ -1,0 +1,32 @@
+export const defaultDictionary = {
+  "app.name": "Prompt Meter",
+  "nav.myUsage": "My usage",
+  "nav.prices": "Prices",
+  "nav.seed": "Seed data",
+  "nav.profile": "Profile",
+  "nav.logout": "Log out",
+  "usage.title": "My usage",
+  "usage.subtitle": "Track your tokens, costs, and prompts across tools.",
+  "prices.title": "Model prices",
+  "prices.subtitle": "USD per 1M tokens (web search: USD per request). Costs are computed when an event arrives, so a price change applies from its effective date and never rewrites history.",
+  "auth.welcome": "Welcome back",
+  "auth.subtitle": "Sign in with your Blocks account to continue.",
+  "auth.continue": "Continue with Blocks",
+  "auth.redirecting": "Redirecting...",
+  "auth.notConfigured": "Login is not configured yet. Register a public OIDC client and set VITE_BLOCKS_OIDC_CLIENT_ID in .env.",
+  "auth.failed": "Sign-in failed",
+  "auth.back": "Back to sign in",
+  "common.save": "Save",
+  "common.cancel": "Cancel",
+  "common.delete": "Delete",
+  "common.refresh": "Refresh",
+  "common.loading": "Loading",
+  "common.error": "Something went wrong",
+  "profile.title": "Profile",
+  "profile.subtitle": "Signed-in user details from Blocks IAM.",
+  "notFound.title": "404",
+  "notFound.message": "This page does not exist.",
+  "notFound.home": "Back home"
+} as const;
+
+export type TranslationKey = keyof typeof defaultDictionary;

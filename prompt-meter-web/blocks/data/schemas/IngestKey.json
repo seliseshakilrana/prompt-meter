@@ -1,0 +1,68 @@
+{
+  "schemaName": "IngestKey",
+  "collectionName": "IngestKeys",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "userId",
+      "type": "String",
+      "isArray": false,
+      "description": "Owner (from the caller's login)."
+    },
+    {
+      "name": "teamId",
+      "type": "String",
+      "isArray": false,
+      "description": "Team the key reports into."
+    },
+    {
+      "name": "label",
+      "type": "String",
+      "isArray": false,
+      "description": "Owner's label for the key."
+    },
+    {
+      "name": "keyPrefix",
+      "type": "String",
+      "isArray": false,
+      "isUniqueData": true,
+      "description": "8-character prefix of pm_<prefix>_<secret>; shown and used for lookup. Unique."
+    },
+    {
+      "name": "keyHash",
+      "type": "String",
+      "isArray": false,
+      "description": "Lowercase hex SHA-256 of the full key. Never readable by browser users."
+    },
+    {
+      "name": "sendPreview",
+      "type": "Boolean",
+      "isArray": false,
+      "description": "When false, no prompt preview is stored."
+    },
+    {
+      "name": "lastUsedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC time of the last accepted batch."
+    },
+    {
+      "name": "revoked",
+      "type": "Boolean",
+      "isArray": false,
+      "description": "Revoked keys are rejected with 401."
+    },
+    {
+      "name": "rateWindowStart",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "Start of the current one-minute rate-limit window (ingest workflow only). Not in PLAN.md; see README."
+    },
+    {
+      "name": "rateWindowCount",
+      "type": "Int",
+      "isArray": false,
+      "description": "Accepted requests in the current window (ingest workflow only). Not in PLAN.md; see README."
+    }
+  ]
+}
