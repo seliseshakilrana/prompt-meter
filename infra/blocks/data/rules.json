@@ -1,0 +1,715 @@
+{
+  "notes": [
+    "TODO(spike): the `ruleGroup` format is not documented by the blocks-data-gateway-configuration skill or the CLI (the CLI passes it through untouched). The ruleGroups below are INTENT NOTATION and must be translated to the real Data Gateway syntax after the Phase 2 spike, before `blocks data rules deploy` / `blocks data sync` is run with --yes.",
+    "Intent notation: a group is {combinator: and|or, rules: [...]}; a rule is {field, operator: equals|in, value} where value may be $currentUser.userId, $currentUser.organizationIds, or $currentUser.organizationIdsWithRole:<role>; {currentUserRole: <role>} matches a global role.",
+    "Every schema except ModelPrice READ is accessLevel 3 (Custom), so anything without an allow policy is denied to browser users. WRITE/EDIT/DELETE on UsageEvent, UserHourly, TeamHourly and IngestKey deliberately have no allow policies: only workflows write them.",
+    "TODO(spike): which identity workflows (dataAction with blocksAuthentication) act as, and whether Custom security without allow policies also blocks them. If it does, add a role/identity-scoped allow policy for the workflow identity on those operations.",
+    "TODO(spike): per-organization roles. $currentUser.organizationIdsWithRole:team-admin assumes Blocks can match a row field against the organizations where the viewer holds a role. If it can't, fall back to: team-admin views served by a blocksAuthorization workflow that checks the role, and rows readable only by owner + platform-admin.",
+    "TODO(spike): CLS on promptPreview must hide the column from team-admin and platform-admin as well. If CLS can't be row-conditional (owner of THAT row), move previews into a separate UsagePreview schema (eventId, userId, preview) with owner-only RLS, and drop promptPreview from UsageEvent."
+  ],
+  "security": [
+    {
+      "schemaName": "UsageEvent",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UsageEvent",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UsageEvent",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UsageEvent",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UserHourly",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UserHourly",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UserHourly",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UserHourly",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "TeamHourly",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "TeamHourly",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "TeamHourly",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "TeamHourly",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "IngestKey",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "IngestKey",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "IngestKey",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "IngestKey",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "RollupState",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "RollupState",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "RollupState",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "RollupState",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "Budget",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "Budget",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "Budget",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "Budget",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "ModelPrice",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 1,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "ModelPrice",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "ModelPrice",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "ModelPrice",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "UsageEvent",
+      "operation": 0,
+      "policyType": 1,
+      "accessLevel": 3,
+      "fieldNames": [
+        "promptPreview"
+      ]
+    },
+    {
+      "schemaName": "IngestKey",
+      "operation": 0,
+      "policyType": 1,
+      "accessLevel": 3,
+      "fieldNames": [
+        "keyHash",
+        "rateWindowStart",
+        "rateWindowCount"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "schemaName": "UsageEvent",
+      "policyName": "usage-event-read",
+      "policyDescription": "Owner reads own rows; team-admin reads rows of teams they administer; platform-admin reads all. Team members get nothing (they use TeamHourly).",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "field": "userId",
+            "operator": "equals",
+            "value": "$currentUser.userId"
+          },
+          {
+            "field": "teamId",
+            "operator": "in",
+            "value": "$currentUser.organizationIdsWithRole:team-admin"
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "UsageEvent",
+      "policyName": "usage-event-preview-owner-only",
+      "policyDescription": "promptPreview column: only the row's owner, admins included in the exclusion. Fallback if CLS can't do this: UsagePreview schema (eventId, userId, preview) with owner-only RLS.",
+      "policyType": 1,
+      "operation": 0,
+      "fieldNames": [
+        "promptPreview"
+      ],
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "field": "userId",
+            "operator": "equals",
+            "value": "$currentUser.userId"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "UserHourly",
+      "policyName": "user-hourly-read",
+      "policyDescription": "Owner reads own hourly rows; team-admin reads their team's rows; platform-admin reads all.",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "field": "userId",
+            "operator": "equals",
+            "value": "$currentUser.userId"
+          },
+          {
+            "field": "teamId",
+            "operator": "in",
+            "value": "$currentUser.organizationIdsWithRole:team-admin"
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "TeamHourly",
+      "policyName": "team-hourly-read",
+      "policyDescription": "Any member of the team (member, team-admin) reads team totals; platform-admin reads all.",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "field": "teamId",
+            "operator": "in",
+            "value": "$currentUser.organizationIds"
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "IngestKey",
+      "policyName": "ingest-key-read-own",
+      "policyDescription": "Owner reads own keys (keyHash hidden by the CLS entry). Create/revoke only through the issue-key/revoke-key workflows.",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "field": "userId",
+            "operator": "equals",
+            "value": "$currentUser.userId"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "RollupState",
+      "policyName": "rollup-state-read-platform-admin",
+      "policyDescription": "Only platform-admin may read RollupState directly (plus the rollup and manual-entry workflows).",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "RollupState",
+      "policyName": "rollup-state-write-platform-admin",
+      "policyDescription": "Only platform-admin may write RollupState directly (plus the rollup and manual-entry workflows).",
+      "policyType": 0,
+      "operation": 1,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "RollupState",
+      "policyName": "rollup-state-edit-platform-admin",
+      "policyDescription": "Only platform-admin may edit RollupState directly (plus the rollup and manual-entry workflows).",
+      "policyType": 0,
+      "operation": 2,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "RollupState",
+      "policyName": "rollup-state-delete-platform-admin",
+      "policyDescription": "Only platform-admin may delete RollupState directly (plus the rollup and manual-entry workflows).",
+      "policyType": 0,
+      "operation": 3,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "ModelPrice",
+      "policyName": "model-price-write-platform-admin",
+      "policyDescription": "Only platform-admin may write prices.",
+      "policyType": 0,
+      "operation": 1,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "ModelPrice",
+      "policyName": "model-price-edit-platform-admin",
+      "policyDescription": "Only platform-admin may edit prices.",
+      "policyType": 0,
+      "operation": 2,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "ModelPrice",
+      "policyName": "model-price-delete-platform-admin",
+      "policyDescription": "Only platform-admin may delete prices.",
+      "policyType": 0,
+      "operation": 3,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "Budget",
+      "policyName": "budget-read",
+      "policyDescription": "Read own user budget; members read their team's budget; platform-admin reads all.",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "combinator": "and",
+            "rules": [
+              {
+                "field": "scope",
+                "operator": "equals",
+                "value": "user"
+              },
+              {
+                "field": "scopeId",
+                "operator": "equals",
+                "value": "$currentUser.userId"
+              }
+            ]
+          },
+          {
+            "combinator": "and",
+            "rules": [
+              {
+                "field": "scope",
+                "operator": "equals",
+                "value": "team"
+              },
+              {
+                "field": "scopeId",
+                "operator": "in",
+                "value": "$currentUser.organizationIds"
+              }
+            ]
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "Budget",
+      "policyName": "budget-write",
+      "policyDescription": "Team-admin may write their team's budget; platform-admin may write any budget.",
+      "policyType": 0,
+      "operation": 1,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "combinator": "and",
+            "rules": [
+              {
+                "field": "scope",
+                "operator": "equals",
+                "value": "team"
+              },
+              {
+                "field": "scopeId",
+                "operator": "in",
+                "value": "$currentUser.organizationIdsWithRole:team-admin"
+              }
+            ]
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "Budget",
+      "policyName": "budget-edit",
+      "policyDescription": "Team-admin may edit their team's budget; platform-admin may edit any budget.",
+      "policyType": 0,
+      "operation": 2,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "combinator": "and",
+            "rules": [
+              {
+                "field": "scope",
+                "operator": "equals",
+                "value": "team"
+              },
+              {
+                "field": "scopeId",
+                "operator": "in",
+                "value": "$currentUser.organizationIdsWithRole:team-admin"
+              }
+            ]
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "Budget",
+      "policyName": "budget-delete",
+      "policyDescription": "Team-admin may delete their team's budget; platform-admin may delete any budget.",
+      "policyType": 0,
+      "operation": 3,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "combinator": "and",
+            "rules": [
+              {
+                "field": "scope",
+                "operator": "equals",
+                "value": "team"
+              },
+              {
+                "field": "scopeId",
+                "operator": "in",
+                "value": "$currentUser.organizationIdsWithRole:team-admin"
+              }
+            ]
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "policyName": "quota-snapshot-read",
+      "policyDescription": "Owner reads own snapshots; team-admin reads their team's; platform-admin reads all.",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "field": "userId",
+            "operator": "equals",
+            "value": "$currentUser.userId"
+          },
+          {
+            "field": "teamId",
+            "operator": "in",
+            "value": "$currentUser.organizationIdsWithRole:team-admin"
+          },
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "policyName": "quota-snapshot-write-platform-admin",
+      "policyDescription": "Only platform-admin may write directly; snapshots are posted through a workflow (Phase 4).",
+      "policyType": 0,
+      "operation": 1,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "policyName": "quota-snapshot-edit-platform-admin",
+      "policyDescription": "Only platform-admin may edit directly; snapshots are posted through a workflow (Phase 4).",
+      "policyType": 0,
+      "operation": 2,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "policyName": "quota-snapshot-delete-platform-admin",
+      "policyDescription": "Only platform-admin may delete directly; snapshots are posted through a workflow (Phase 4).",
+      "policyType": 0,
+      "operation": 3,
+      "ruleGroup": {
+        "combinator": "and",
+        "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    }
+  ]
+}

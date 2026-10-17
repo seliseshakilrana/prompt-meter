@@ -1,0 +1,49 @@
+{
+  "schemaName": "QuotaSnapshot",
+  "collectionName": "QuotaSnapshots",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "userId",
+      "type": "String",
+      "isArray": false,
+      "description": "Owner."
+    },
+    {
+      "name": "teamId",
+      "type": "String",
+      "isArray": false,
+      "description": "Team."
+    },
+    {
+      "name": "tool",
+      "type": "String",
+      "isArray": false,
+      "description": "Tool."
+    },
+    {
+      "name": "quotaName",
+      "type": "String",
+      "isArray": false,
+      "description": "Quota name as the tool reports it."
+    },
+    {
+      "name": "percentUsed",
+      "type": "Float",
+      "isArray": false,
+      "description": "Percent of the quota used."
+    },
+    {
+      "name": "resetsAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC reset time."
+    },
+    {
+      "name": "capturedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC capture time."
+    }
+  ]
+}

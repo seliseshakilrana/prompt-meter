@@ -2,7 +2,21 @@
 
 **Goal:** a web portal that tracks tokens and cost per prompt across AI coding tools, for individuals and teams.
 
-**Status:** planning. Nothing has been executed against the Blocks project yet. Reviewed on 2026-10-17 by Claude Code and Antigravity CLI (see [Review log](#review-log-2026-10-17)).
+**Status (2026-10-17):** Phase 0 partly done. The proxy (Phase 3 code) and the Blocks definitions (`infra/blocks/`, files only, nothing applied) are built and pass local tests. Reviewed by Claude Code and Antigravity CLI (see [Review log](#review-log-2026-10-17)).
+
+## Progress
+
+| Item | State |
+|---|---|
+| 0.1 OIDC client `prompt-meter` (public, PKCE) + identity provider | ✅ Created. Client ID `e140c37a-1cc3-4edc-b77b-e00edcac0f97`. Redirects: deployed `/login/callback` and `:5173/login/callback`. |
+| 0.2 Login switched on | ✅ The server also set `accountActionBaseUrl` to `https://iam.seliseblocks.com` and the activation path to `oidc/activate/` (expected with OIDC login). |
+| 0.3 Multi-org | ⏸ **Skipped for now.** A save without consent left it off, and saving with consent fails with a network error in the CLI. |
+| 0.4 Roles `platform-admin`, `team-admin`, `member` | ✅ Created |
+| 0.5 Team "SELISE" | ⛔ Blocked. Blocks refuses to create organizations while multi-org is off (`multi_org_disabled`). Until then, everyone is in the built-in `default` organization, which acts as the only team. Personal teams wait for multi-org too. |
+| 0.6 User shakil.rana@selisegroup.com (platform-admin, team-admin) | ✅ Created. Inactive until the activation email is used. |
+| Sign-in method | Google / Microsoft chosen. Needs a provider app registration (client ID, secret, redirect URI) from the user. The callback address to register with the provider is still to be confirmed. |
+| Proxy (`proxy/`) | ✅ Built: TypeScript, better-sqlite3 queue, Claude/OpenAI/Gemini adapters (OpenAI and Gemini not checked against live responses), 60 tests passing |
+| Blocks definitions (`infra/blocks/`) | ✅ Written: schemas, rules, indexes, 5 workflows, seeds. 54 logic tests passing. Rule condition syntax and 27 spike items still open (see `infra/blocks/README.md`). |
 
 ## Decisions
 
@@ -55,11 +69,12 @@ Why the work is split this way: the Blocks workflow guide says workflows are not
 
 | Schema | Fields |
 |---|---|
-| **UsageEvent** | eventId (provider response id, e.g. `msg_…`, **unique index**), userId, teamId, tool, provider, model (taken from the **response**), sessionId, promptId, callIndex, totalInputTokens, uncachedInputTokens, cacheReadTokens, cacheWrite5mTokens, cacheWrite1hTokens, outputTokens, thinkingTokens, serverToolRequests, speed, costUsd, pricingStatus (`priced` / `unpriced`), promptPreview, projectTag, occurredAt (collector), receivedAt (server) |
+| **UsageEvent** | eventId (provider response id, e.g. `msg_…`, **unique index**), source (`proxy` / `manual`), userId, teamId, tool, provider, model (taken from the **response**), sessionId, promptId, callIndex, totalInputTokens, uncachedInputTokens, cacheReadTokens, cacheWrite5mTokens, cacheWrite1hTokens, outputTokens, thinkingTokens, serverToolRequests, speed, costUsd, pricingStatus (`priced` / `unpriced`), promptPreview, projectTag, occurredAt (collector), receivedAt (server) |
 | **UserHourly** | userId, teamId, hourStart (UTC, top of the hour), tool, model, source (`proxy` / `manual`), token totals, costUsd, eventCount, promptCount |
 | **TeamHourly** | teamId, hourStart (UTC), tool, model, source, token totals, costUsd, eventCount |
 | **IngestKey** | userId, teamId, label, keyPrefix (shown, used for lookup), keyHash, sendPreview (on/off), lastUsedAt, revoked |
-| **ModelPrice** | provider, model, effectiveFrom, inputPer1M, outputPer1M, cacheReadPer1M, cacheWrite5mPer1M, cacheWrite1hPer1M, longContextThreshold, longContextInputPer1M, longContextOutputPer1M, fastMultiplier, webSearchPerRequest |
+| **ModelPrice** | provider, model, modelAliases (dated IDs and prefixes that share this price), effectiveFrom, inputPer1M, outputPer1M, cacheReadPer1M, cacheWrite5mPer1M, cacheWrite1hPer1M, longContextThreshold (compared against **total** input, cached tokens included), longContextInputPer1M, longContextOutputPer1M, longContextCacheReadPer1M, longContextCacheWrite5mPer1M, longContextCacheWrite1hPer1M, fastMultiplier, webSearchPerRequest |
+| **RollupState** | name, lastRunStartedAt, lastRunFinishedAt, dirtyHours (UTC hours marked for rebuild by manual edits or deletes). Platform-admin and workflow access only. |
 | **Budget** | scope (user or team), scopeId, monthlyLimitUsd, alertPercent |
 | **QuotaSnapshot** *(optional)* | userId, teamId, tool, quotaName, percentUsed, resetsAt, capturedAt. For subscriptions that report quota but not tokens. |
 
@@ -67,6 +82,7 @@ Rules:
 - **Cost is computed when an event arrives and stored on it.** Later price changes don't rewrite history. An event for a model with no price is stored as `unpriced` and priced later by a re-pricing job.
 - **No duplicates:** `eventId` is unique, so a retried batch never counts twice.
 - **Ownership comes from our own fields.** Blocks adds system fields (`CreatedBy`, `OrganizationId`, …) itself, but webhook-written records won't name the person in `CreatedBy`. Ownership comes from `userId` / `teamId`, which the workflow sets from the ingest key. The collector never sends them.
+- **The browser never writes ownership fields.** IngestKey records and manual UsageEvents are created only by server-side workflows (see [Trusted writes](#trusted-writes)). Those workflows take `userId` from the caller's Blocks login and check that the caller belongs to the `teamId` they ask for. Portal users have no direct write access to IngestKey or UsageEvent.
 - **Usage is self-reported.** Collectors run on users' own machines, so usage can be under-counted. Budgets alert people. They don't enforce limits.
 - **Manual entries** are UsageEvents with `source: manual` and no provider `eventId`; the portal generates one. They show the **Manual** label wherever they appear.
 
@@ -89,8 +105,10 @@ Every adapter fills the same fields, so totals compare like with like:
 | uncachedInputTokens | `input_tokens` | `input_tokens − input_tokens_details.cached_tokens` | `promptTokenCount − cachedContentTokenCount` |
 | cacheReadTokens | `cache_read_input_tokens` | `input_tokens_details.cached_tokens` | `cachedContentTokenCount` |
 | cacheWrite5m / 1h | `usage.cache_creation.ephemeral_5m_input_tokens` / `ephemeral_1h_input_tokens` | — | — |
-| outputTokens | `output_tokens` (includes thinking) | `output_tokens` (includes reasoning) | `candidatesTokenCount + thoughtsTokenCount` (thinking billed as output) |
-| thinkingTokens | `output_tokens_details.thinking_tokens` if present | `output_tokens_details.reasoning_tokens` | `thoughtsTokenCount` |
+| outputTokens | `output_tokens` (includes thinking) | `output_tokens` (includes reasoning) | `candidatesTokenCount + thoughtsTokenCount` (thinking billed as output; check in Phase 4 that `candidatesTokenCount` doesn't already include thoughts) |
+| thinkingTokens | usually not reported by the API, so leave empty (Claude Code's own JSON adds `output_tokens_details.thinking_tokens`) | `output_tokens_details.reasoning_tokens` | `thoughtsTokenCount` |
+| serverToolRequests | `usage.server_tool_use.web_search_requests` (+ `web_fetch_requests`) | — | — |
+| speed | `usage.speed` (`standard` / `fast`) | — | — |
 | Where it arrives when streaming | `message_start.usage` (input and cache) + **last** `message_delta.usage` (`output_tokens` is a running total, don't add them up). `message_stop` has none. | `response.completed` event | usage in the final chunk |
 
 Notes:
@@ -104,13 +122,15 @@ Notes:
   - Every path and all headers, including `x-api-key`, `Authorization: Bearer`, `anthropic-beta` and `anthropic-version`.
   - Stream responses chunk by chunk with no buffering.
   - Don't break compressed responses: leave `accept-encoding` alone and decompress a copy for reading.
-- **Only record real usage:** generation calls such as `/v1/messages` and `/v1/responses`. Never record `count_tokens` or `models` calls.
+- **Only record real usage:** generation calls (Claude `/v1/messages`, OpenAI `/v1/responses` and `/v1/chat/completions`, Gemini `*:generateContent` and `*:streamGenerateContent`). Never record `count_tokens` or `models` calls.
+- **Never delay the request.** Copy the request body for reading the preview, and send the original upstream straight away.
 - **Group calls into prompts.**
   - A new `promptId` starts when the newest user message contains typed text, not just tool results.
+  - **Background calls don't start a new prompt.** Subagent (Task) calls, title generation and compaction calls belong to the prompt that triggered them. Recognize them by their system prompt and model (for example small, fast side calls) and check the rules in Phase 3, or prompt counts will be inflated.
   - The preview comes from that newest typed text block.
   - `sessionId` comes from the tool's session marker if it sends one (Claude Code `metadata.user_id`: check in Phase 3), otherwise from a gap-in-time heuristic.
 - **Never lose an event.** Hold events in a disk queue (SQLite) and retry with backoff. Send in batches every ~10 s, or every 50 events.
-- **Choose the team key** per project folder (a `.prompt-meter` file) or per shell (the `PROMPT_METER_KEY` environment variable), with a default key for everything else.
+- **Choose the team key** through the `X-Prompt-Meter-Key` request header sent by the tool (Claude Code: `ANTHROPIC_CUSTOM_HEADERS`). The proxy removes it before forwarding. Otherwise the proxy uses its default key. A per-folder file can't work, because the proxy can't see the tool's working directory. For per-folder keys, set the environment variable per folder with something like direnv.
 - **Clean the preview twice.** The proxy removes secret-looking text before sending, and the workflow repeats it. When `sendPreview` is off, no preview is sent.
 - **Local TLS is optional.** Plain `http://127.0.0.1` is enough for the tools above. Add a locally trusted certificate only if a tool refuses plain http.
 
@@ -118,29 +138,47 @@ Notes:
 
 | Data | Owner | Team member | Team admin | Platform admin |
 |---|---|---|---|---|
-| UsageEvent rows | ✅ | ❌ | ✅ | ✅ |
+| UsageEvent rows (read) | ✅ | ❌ | ✅ | ✅ |
+| UsageEvent (write) | only through the manual-entry workflow; own `source: manual` events can be edited or deleted, proxy events never | ❌ | ❌ | ❌ |
 | `promptPreview` field | ✅ | ❌ | ❌ | ❌ |
 | UserHourly | ✅ own | ❌ | ✅ team | ✅ |
 | TeamHourly (team totals) | ✅ | ✅ | ✅ | ✅ |
-| IngestKey | ✅ own | ❌ | ❌ | ❌ (the ingest workflow reads it) |
+| IngestKey | read own (no `keyHash`); create and revoke only through the key workflow | ❌ | ❌ | ❌ (workflows read it) |
+| RollupState | ❌ | ❌ | ❌ | ✅ (and the rollup workflow) |
 | Budget | read own | read team | read + edit team | ✅ |
 | QuotaSnapshot | ✅ own | ❌ | ✅ team | ✅ |
 | ModelPrice | read | read | read | read + edit |
 
 - Members get team totals from **TeamHourly**, and admins get per-person numbers from **UserHourly**, so neither needs raw rows for dashboards.
 - **If column rules can't hide `promptPreview` from admins,** move previews to a separate `UsagePreview` schema (eventId, userId, preview) that only the owner can read.
+- **Team scoping has to be checked.** `team-admin` and `member` must apply per team (per Blocks organization), and row rules must match `teamId` against the viewer's organizations and role there. Webhook-written rows won't carry the team's `OrganizationId` by themselves, so the workflow should set it, if Blocks allows that. This is checked in the Phase 2 spike.
+
+## Trusted writes
+
+Anything that sets `userId` or `teamId` runs server-side, in workflows the browser calls with its Blocks login (`authType: blocksAuthorization`):
+
+| Workflow | What it does |
+|---|---|
+| **issue-key** | Takes `userId` from the caller's login and checks they belong to the requested `teamId`. It generates the key, stores `keyPrefix` and `keyHash`, and returns the full key **once**. |
+| **revoke-key** | Lets owners revoke their own keys. When a member is removed from a team, all of their keys for that team are revoked. |
+| **manual-entry** | Create, edit or delete the caller's own manual events. `userId` comes from the login, `teamId` is checked against their membership, `source: manual` is set, the cost is computed, and the affected UTC hour is marked dirty in RollupState. |
+
+**Ingest also checks membership.** When a key is used, the ingest workflow checks that its owner still belongs to its team, in case a revocation was missed.
 
 ## Ingest design
 
-- **Collector request:** sends `POST /ingest` with a **batch** of events and the header `X-Ingest-Key`.
+- **Collector request:** sends `POST /ingest` with a **batch** of events and the header `X-Ingest-Key`, read case-insensitively.
 - **The webhook has no Blocks login of its own** (`authType: none`). The workflow:
-  1. finds the key by `keyPrefix`, checks `keyHash`, and rejects revoked keys
+  1. finds the key by `keyPrefix`, checks `keyHash`, rejects revoked keys, and checks that the owner still belongs to the team
   2. sets `userId` and `teamId` from the key, ignoring anything the client sends for them
   3. cleans the preview, or drops it when `sendPreview` is off
-  4. looks up ModelPrice by model and date, and computes `costUsd` or marks the event `unpriced`
+  4. looks up ModelPrice by model, alias or prefix, and date, and computes `costUsd` or marks the event `unpriced`
   5. inserts the events and skips any `eventId` already stored
 - **Limits:** a maximum batch size and body size, and a rate limit per key.
 - **Rollup:** a **scheduled** workflow rebuilds UserHourly and TeamHourly for the UTC hours touched since its last run. If an event arrives late, the next run fixes the totals.
+  - It records each run in **RollupState**. Each run selects events with `receivedAt` after the previous run's start, **minus a 2-minute overlap**, so events saved just as a run began aren't missed. Rebuilding an hour twice is harmless.
+  - It also rebuilds the `dirtyHours` marked by manual edits and deletes.
+  - It only scans the last 48 hours plus the dirty hours, never the whole collection.
 
 ---
 
@@ -167,7 +205,7 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
 - [ ] Write the schemas and access rules in `blocks/data/`, with a unique index on `UsageEvent.eventId`, then push them with `blocks data sync` (dry run, then run).
 - [ ] Load ModelPrice with current Claude, OpenAI and Gemini rates, including the cache-write, long-context, fast-mode and web-search columns.
 - [ ] First-login step: create the user's personal team if they don't have one.
-- [ ] Build the **My usage** overview from a small set of sample events, showing times in the viewer's local timezone. Test with the browser set to UTC+6 and UTC+5:30.
+- [ ] Build the **My usage** overview from a small set of sample data (seed **both** UsageEvent and UserHourly rows, since the rollup arrives in Phase 2), showing times in the viewer's local timezone. Test with the browser set to UTC+6 and UTC+5:30.
 - [ ] Decide whether to remove the leftover localization data (`todoApp` modules and test languages) from another project.
 
 **Done when:** you log in and see charts drawn from sample data.
@@ -181,9 +219,14 @@ Every command is run as `--dry-run` first, and with `--yes` only after approval.
   - Does a duplicate `eventId` get skipped by the unique index?
   - How many batched calls per minute can one webhook take?
   - Can a scheduled workflow rebuild the hourly totals?
+  - Does the code sandbox provide `crypto` (Node or Web Crypto) for hashing keys?
+  - Can a webhook return custom status codes (401, 429) and keep rate-limit state per key?
+  - With `blocksAuthorization`, does the workflow see the caller's user ID and organization memberships (for issue-key and manual-entry)?
+  - Can roles be scoped per organization, and can a row rule match `teamId` against the viewer's organization and role?
+  - Can the workflow set `OrganizationId` on the rows it writes?
   - **If several of these fail,** replace the workflow with a small ingest service.
-- [ ] Build the ingest workflow and the rollup workflow, and import both with `blocks logic workflow import` (dry run, then run).
-- [ ] Settings page: create and revoke ingest keys, showing each key once.
+- [ ] Build the ingest, rollup, issue-key, revoke-key and manual-entry workflows, and import them with `blocks logic workflow import` (dry run, then run).
+- [ ] Settings page: create and revoke ingest keys through the key workflows, showing each key once.
 
 **Done when:**
 - A batched `curl` with a valid key creates events.
@@ -283,7 +326,22 @@ The plan was reviewed read-only by Claude Code (`claude -p`, plan mode) and Anti
 - **Webhook:** rate and size limits.
 - **Gaps filled:** access rules for every table, unpriced models, UTC dates, the self-reporting caveat, and the subscription-sign-in limit for every tool.
 
-**Rejected, because the evidence says otherwise:**
+**Second review (readiness):** agy said ready. Claude found two blockers, both now fixed:
+- **Forgeable ownership:** keys and manual entries are now created only by server-side workflows that take the user from the login token and check team membership. See [Trusted writes](#trusted-writes).
+- **Missing field:** UsageEvent was missing `source`.
+
+Also taken in from the second review:
+- **Team-scoped roles:** added to the spike.
+- **Membership:** checked at ingest.
+- **Rollup:** a RollupState watermark with overlap and dirty hours, and the scan limited to recent hours.
+- **Phase 1 sample data:** seeds the hourly totals too.
+- **Normalization:** rows for `serverToolRequests` and `speed`, and Claude's thinking count left empty.
+- **Prices:** cache rates above the long-context threshold, and model alias and prefix matching.
+- **Webhook:** spike checks for custom status codes, rate limits and `crypto`.
+- **Proxy:** Gemini paths, copying the request without delaying it, and keeping background calls from starting new prompts.
+- **Header:** `X-Ingest-Key` is read case-insensitively.
+
+**Rejected in the first review, because the evidence says otherwise:**
 
 | Claim | Why it was rejected |
 |---|---|

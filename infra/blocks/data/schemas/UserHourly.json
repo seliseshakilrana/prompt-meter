@@ -1,0 +1,109 @@
+{
+  "schemaName": "UserHourly",
+  "collectionName": "UserHourlys",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "userId",
+      "type": "String",
+      "isArray": false,
+      "description": "Owner."
+    },
+    {
+      "name": "teamId",
+      "type": "String",
+      "isArray": false,
+      "description": "Team (Blocks organization id)."
+    },
+    {
+      "name": "hourStart",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC top of the hour."
+    },
+    {
+      "name": "tool",
+      "type": "String",
+      "isArray": false,
+      "description": "Tool."
+    },
+    {
+      "name": "model",
+      "type": "String",
+      "isArray": false,
+      "description": "Model."
+    },
+    {
+      "name": "source",
+      "type": "String",
+      "isArray": false,
+      "description": "proxy | manual"
+    },
+    {
+      "name": "totalInputTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of totalInputTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "uncachedInputTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of uncachedInputTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "cacheReadTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of cacheReadTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "cacheWrite5mTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of cacheWrite5mTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "cacheWrite1hTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of cacheWrite1hTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "outputTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of outputTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "thinkingTokens",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of thinkingTokens for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "serverToolRequests",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of serverToolRequests for this hour (Float to avoid 32-bit Int overflow)."
+    },
+    {
+      "name": "costUsd",
+      "type": "Float",
+      "isArray": false,
+      "description": "Sum of priced event costs (unpriced events add 0)."
+    },
+    {
+      "name": "eventCount",
+      "type": "Int",
+      "isArray": false,
+      "description": "Number of events."
+    },
+    {
+      "name": "promptCount",
+      "type": "Int",
+      "isArray": false,
+      "description": "Distinct prompts (promptId, or eventId when there is none)."
+    }
+  ]
+}

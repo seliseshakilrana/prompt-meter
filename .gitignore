@@ -1,0 +1,6 @@
+# Vendored SELISE Blocks skills (installed locally, not committed)
+.agents/
+.claude/skills/
+AGENTS.md
+CLAUDE.md
+blocks.json

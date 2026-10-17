@@ -1,0 +1,159 @@
+{
+  "schemaName": "UsageEvent",
+  "collectionName": "UsageEvents",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "String",
+      "isArray": false,
+      "isUniqueData": true,
+      "description": "Provider response id (msg_..., resp_..., responseId), pm_<sha256> when none, or manual_<id>. Unique."
+    },
+    {
+      "name": "source",
+      "type": "String",
+      "isArray": false,
+      "description": "proxy | manual"
+    },
+    {
+      "name": "userId",
+      "type": "String",
+      "isArray": false,
+      "description": "Owner. Set by the workflow from the ingest key or the caller's login, never by the client."
+    },
+    {
+      "name": "teamId",
+      "type": "String",
+      "isArray": false,
+      "description": "Team (Blocks organization id). Set by the workflow, never by the client."
+    },
+    {
+      "name": "tool",
+      "type": "String",
+      "isArray": false,
+      "description": "claude-code | codex | antigravity-cli | api | other"
+    },
+    {
+      "name": "provider",
+      "type": "String",
+      "isArray": false,
+      "description": "anthropic | openai | google"
+    },
+    {
+      "name": "model",
+      "type": "String",
+      "isArray": false,
+      "description": "Model named in the provider response."
+    },
+    {
+      "name": "sessionId",
+      "type": "String",
+      "isArray": false,
+      "description": "Tool session marker or heuristic session id; may be null."
+    },
+    {
+      "name": "promptId",
+      "type": "String",
+      "isArray": false,
+      "description": "Groups the calls caused by one typed prompt."
+    },
+    {
+      "name": "callIndex",
+      "type": "Int",
+      "isArray": false,
+      "description": "Order of this call within its prompt."
+    },
+    {
+      "name": "totalInputTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "All input tokens, cached included (normalized per adapter)."
+    },
+    {
+      "name": "uncachedInputTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "Input tokens billed at the base input rate."
+    },
+    {
+      "name": "cacheReadTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "Input tokens read from the prompt cache."
+    },
+    {
+      "name": "cacheWrite5mTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "Input tokens written to the 5-minute cache."
+    },
+    {
+      "name": "cacheWrite1hTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "Input tokens written to the 1-hour cache."
+    },
+    {
+      "name": "outputTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "Output tokens, thinking included."
+    },
+    {
+      "name": "thinkingTokens",
+      "type": "Int",
+      "isArray": false,
+      "description": "Thinking tokens when the provider reports them, else null. Not added to cost."
+    },
+    {
+      "name": "serverToolRequests",
+      "type": "Int",
+      "isArray": false,
+      "description": "Server tool requests (web search, web fetch)."
+    },
+    {
+      "name": "speed",
+      "type": "String",
+      "isArray": false,
+      "description": "standard | fast | null"
+    },
+    {
+      "name": "costUsd",
+      "type": "Float",
+      "isArray": false,
+      "description": "Cost computed when the event arrived; null when unpriced."
+    },
+    {
+      "name": "pricingStatus",
+      "type": "String",
+      "isArray": false,
+      "description": "priced | unpriced"
+    },
+    {
+      "name": "promptPreview",
+      "type": "String",
+      "isArray": false,
+      "isPIIData": true,
+      "description": "Cleaned preview, at most 100 characters. Owner-only column."
+    },
+    {
+      "name": "projectTag",
+      "type": "String",
+      "isArray": false,
+      "description": "Optional project label from the collector."
+    },
+    {
+      "name": "occurredAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC time the collector finished reading the response."
+    },
+    {
+      "name": "receivedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC time the workflow stored the event."
+    }
+  ]
+}

@@ -1,0 +1,325 @@
+{
+  "about": "Indexes are not part of `blocks data schema push`. Each entry is applied with `blocks data schema indexes create --schema-id <id> --fields <field[:asc|desc],...> [--unique] --name <name>` (see README). Max 15 user indexes per schema.",
+  "indexes": [
+    {
+      "schemaName": "UsageEvent",
+      "name": "eventId_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "eventId",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "No duplicates: a retried batch never counts twice."
+    },
+    {
+      "schemaName": "UsageEvent",
+      "name": "userId_occurredAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "occurredAt",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "My usage drill-down."
+    },
+    {
+      "schemaName": "UsageEvent",
+      "name": "teamId_occurredAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "occurredAt",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Team admin drill-down."
+    },
+    {
+      "schemaName": "UsageEvent",
+      "name": "occurredAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "occurredAt",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Rollup rebuild of whole UTC hours."
+    },
+    {
+      "schemaName": "UsageEvent",
+      "name": "receivedAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "receivedAt",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Rollup watermark scan."
+    },
+    {
+      "schemaName": "UsageEvent",
+      "name": "pricingStatus_model",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "pricingStatus",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "model",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Unpriced models list and re-pricing job."
+    },
+    {
+      "schemaName": "UserHourly",
+      "name": "userId_hourStart",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "hourStart",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "My usage charts."
+    },
+    {
+      "schemaName": "UserHourly",
+      "name": "teamId_hourStart",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "hourStart",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Team admin per-person table."
+    },
+    {
+      "schemaName": "UserHourly",
+      "name": "hourStart",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "hourStart",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Rollup delete of rebuilt hours."
+    },
+    {
+      "schemaName": "UserHourly",
+      "name": "rollup_key_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "hourStart",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "tool",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "model",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "source",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "One row per rollup key; blocks double rows if a delete is missed."
+    },
+    {
+      "schemaName": "TeamHourly",
+      "name": "teamId_hourStart",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "hourStart",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Team usage charts."
+    },
+    {
+      "schemaName": "TeamHourly",
+      "name": "hourStart",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "hourStart",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Rollup delete of rebuilt hours."
+    },
+    {
+      "schemaName": "TeamHourly",
+      "name": "rollup_key_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "hourStart",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "tool",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "model",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "source",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "One row per rollup key."
+    },
+    {
+      "schemaName": "IngestKey",
+      "name": "keyPrefix_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "keyPrefix",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Key lookup by prefix; also catches prefix collisions at issue time."
+    },
+    {
+      "schemaName": "IngestKey",
+      "name": "userId_teamId",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Settings page and member-removed revocation."
+    },
+    {
+      "schemaName": "ModelPrice",
+      "name": "model_effectiveFrom",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "model",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "effectiveFrom",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Price lookup."
+    },
+    {
+      "schemaName": "RollupState",
+      "name": "name_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "name",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Single 'hourly' state row."
+    },
+    {
+      "schemaName": "Budget",
+      "name": "scope_scopeId",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "scope",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "scopeId",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Budget lookup."
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "name": "userId_capturedAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "capturedAt",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Latest quota per user."
+    },
+    {
+      "schemaName": "QuotaSnapshot",
+      "name": "teamId_capturedAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "teamId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "capturedAt",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Team admin quota view."
+    }
+  ]
+}

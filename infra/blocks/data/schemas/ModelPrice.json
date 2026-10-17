@@ -1,0 +1,109 @@
+{
+  "schemaName": "ModelPrice",
+  "collectionName": "ModelPrices",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "provider",
+      "type": "String",
+      "isArray": false,
+      "description": "anthropic | openai | google"
+    },
+    {
+      "name": "model",
+      "type": "String",
+      "isArray": false,
+      "description": "Canonical model id."
+    },
+    {
+      "name": "modelAliases",
+      "type": "String",
+      "isArray": true,
+      "description": "Dated ids (exact) and prefixes ending in * that share this price."
+    },
+    {
+      "name": "effectiveFrom",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC start of this price. The newest row not after occurredAt applies."
+    },
+    {
+      "name": "inputPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "Uncached input."
+    },
+    {
+      "name": "outputPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "Output (thinking included)."
+    },
+    {
+      "name": "cacheReadPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "Cache read."
+    },
+    {
+      "name": "cacheWrite5mPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "5-minute cache write."
+    },
+    {
+      "name": "cacheWrite1hPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "1-hour cache write."
+    },
+    {
+      "name": "longContextThreshold",
+      "type": "Int",
+      "isArray": false,
+      "description": "Long-context rates apply when totalInputTokens (cached included) is above this."
+    },
+    {
+      "name": "longContextInputPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "Uncached input above the threshold."
+    },
+    {
+      "name": "longContextOutputPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "Output above the threshold."
+    },
+    {
+      "name": "longContextCacheReadPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "Cache read above the threshold."
+    },
+    {
+      "name": "longContextCacheWrite5mPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "5-minute cache write above the threshold."
+    },
+    {
+      "name": "longContextCacheWrite1hPer1M",
+      "type": "Float",
+      "isArray": false,
+      "description": "1-hour cache write above the threshold."
+    },
+    {
+      "name": "fastMultiplier",
+      "type": "Float",
+      "isArray": false,
+      "description": "Multiplier on token cost when speed is fast."
+    },
+    {
+      "name": "webSearchPerRequest",
+      "type": "Float",
+      "isArray": false,
+      "description": "USD per server tool request."
+    }
+  ]
+}
