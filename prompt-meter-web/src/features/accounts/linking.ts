@@ -3,8 +3,8 @@
 // workflow is the one that enforces it.
 
 export type LinkTool = "claude-code" | "codex" | "antigravity-cli";
-export type LinkMethod = "google" | "microsoft" | "email-code";
-export type OidcMethod = Exclude<LinkMethod, "email-code">;
+export type LinkMethod = "google" | "microsoft" | "email-code" | "local";
+export type OidcMethod = Exclude<LinkMethod, "email-code" | "local">;
 
 export const LINK_TOOLS: { id: LinkTool; label: string; hint: string }[] = [
   { id: "claude-code", label: "Claude Code", hint: "The email of your Claude account (claude.ai)." },
@@ -13,15 +13,16 @@ export const LINK_TOOLS: { id: LinkTool; label: string; hint: string }[] = [
 ];
 
 export const METHODS_BY_TOOL: Record<LinkTool, LinkMethod[]> = {
-  "claude-code": ["google", "email-code"],
-  codex: ["google", "microsoft", "email-code"],
-  "antigravity-cli": ["google"]
+  "claude-code": ["local", "google", "email-code"],
+  codex: ["local", "google", "microsoft", "email-code"],
+  "antigravity-cli": ["local", "google"]
 };
 
 export const METHOD_LABELS: Record<LinkMethod, string> = {
   google: "Google",
   microsoft: "Microsoft",
-  "email-code": "Email code"
+  "email-code": "Email code",
+  local: "Local Machine"
 };
 
 export function toolLabel(tool: string): string {
@@ -137,7 +138,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   state_mismatch: "This sign-in wasn't started from this browser tab, or it expired. Start again.",
   limits_unavailable: "Couldn't check limits right now. Try again in a minute.",
   lookup_failed: "Couldn't check account details right now. Try again in a minute.",
-  not_configured: "Account linking isn't configured for this app yet."
+  not_configured: "Account linking isn't configured for this app yet.",
+  proxy_unreachable: "Could not reach prompt-meter-proxy on your local machine. Is it running?",
+  no_account_detected: "No local account was detected for this tool.",
+  authorization_rejected: "Authorization was cancelled in your terminal.",
+  authorization_timeout: "Authorization timed out. Please try again.",
+  authorization_failed: "Authorization failed on your local machine."
 };
 
 export function linkErrorMessage(code: string | undefined, fallback = "Something went wrong. Try again."): string {

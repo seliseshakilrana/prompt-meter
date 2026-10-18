@@ -20,6 +20,7 @@ import { type Config, previewEnabled } from "./config.js";
 import { type Assignment, PromptTracker } from "./grouping.js";
 import { isBackgroundCall } from "./heuristics/background.js";
 import { inferTool } from "./heuristics/tool.js";
+import { handleLocalLink, type LocalLinkOptions } from "./local-link.js";
 import { log } from "./log.js";
 import { makePreview } from "./redact.js";
 import type { EventSink } from "./sinks.js";
@@ -48,6 +49,8 @@ export interface ProxyOptions {
   accounts?: AccountResolver;
   /** Side copies larger than this are not parsed (default 64 MB). */
   maxCaptureBytes?: number;
+  /** Options for local machine browser-to-terminal loopback linking (/api/link/*). */
+  localLinkOptions?: Omit<LocalLinkOptions, "accounts">;
 }
 
 /** Filter a rawHeaders list: drop hop-by-hop headers (and those named in Connection) plus `extraDrop`. */
@@ -130,6 +133,11 @@ export function createProxyServer(opts: ProxyOptions): http.Server {
 
     if (pathPart === "/__prompt-meter/health") {
       res.writeHead(200, { "content-type": "application/json" }).end('{"ok":true}');
+      return;
+    }
+
+    if (pathPart.startsWith("/api/link/")) {
+      void handleLocalLink(req, res, { accounts: opts.accounts, ...opts.localLinkOptions });
       return;
     }
 

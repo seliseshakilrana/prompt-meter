@@ -1,11 +1,18 @@
-import { KeyRound, Mail } from "lucide-react";
-import { useState } from "react";
+import { KeyRound, Mail, Terminal } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { linkingConfig } from "../../lib/blocks/config";
 import { Alert } from "../../shared/ui/Alert";
 import { FormField } from "../../shared/ui/FormField";
 import { Modal } from "../../shared/ui/Modal";
-import { completeLink, LinkError, startLink } from "./accountsApi";
+import { useCurrentUser } from "../profile/useCurrentUser";
+import {
+  authorizeFromLocalProxy,
+  checkLocalProxy,
+  completeLink,
+  LinkError,
+  startLink
+} from "./accountsApi";
 import {
   buildAuthorizeUrl,
   LINK_CALLBACK_PATH,
@@ -35,19 +42,81 @@ function errorText(error: unknown): string {
 }
 
 /**
- * Asks for the tool and its account email, then proves the email: Google / Microsoft
- * sign-in (redirect, finished on /accounts/link/callback) or a code sent to the address.
+ * Asks for the tool and its account email, then proves the email:
+ * 1. Local loopback authorization from prompt-meter-proxy via terminal prompt, or
+ * 2. Google / Microsoft sign-in (redirect, finished on /accounts/link/callback), or
+ * 3. A code sent to the address.
  */
-export function ConnectAccountDialog({ onClose, onLinked, returnTo }: { onClose: () => void; onLinked: () => void; returnTo: string }) {
+export function ConnectAccountDialog({
+  onClose,
+  onLinked,
+  returnTo,
+  userId
+}: {
+  onClose: () => void;
+  onLinked: () => void;
+  returnTo: string;
+  userId?: string;
+}) {
+  const me = useCurrentUser();
+  const effectiveUserId = userId ?? me.data?.data?.itemId ?? (me.data?.data as Record<string, unknown> | undefined)?.id as string | undefined;
+
   const [tool, setTool] = useState<LinkTool>("claude-code");
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState<LinkMethod | "code" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [codeStep, setCodeStep] = useState<{ challengeId: string; email: string } | null>(null);
   const [code, setCode] = useState("");
+  const [proxyState, setProxyState] = useState<{
+    checked: boolean;
+    running: boolean;
+    accounts: Record<string, string | null>;
+  }>({
+    checked: false,
+    running: false,
+    accounts: {}
+  });
+
   const toolInfo = LINK_TOOLS.find((t) => t.id === tool)!;
+  const detectedEmail = proxyState.accounts[tool];
+
+  useEffect(() => {
+    let mounted = true;
+    void checkLocalProxy().then((res) => {
+      if (mounted) {
+        setProxyState({ checked: true, running: res.running, accounts: res.accounts });
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function handleLocalAuthorize() {
+    if (!effectiveUserId) {
+      setError("You must be signed in to connect an account.");
+      return;
+    }
+    setError(null);
+    setBusy("local");
+    try {
+      await authorizeFromLocalProxy(tool, effectiveUserId);
+      onLinked();
+    } catch (caught) {
+      setBusy(null);
+      if (caught instanceof LinkError && caught.code === "already_linked") {
+        onLinked();
+        return;
+      }
+      setError(errorText(caught));
+    }
+  }
 
   async function begin(method: LinkMethod) {
+    if (method === "local") {
+      await handleLocalAuthorize();
+      return;
+    }
     setError(null);
     const normalized = normalizeEmail(email);
     if (!normalized) {
@@ -142,6 +211,63 @@ export function ConnectAccountDialog({ onClose, onLinked, returnTo }: { onClose:
             {LINK_TOOLS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
         </label>
+
+        {/* Dedicated prominent Local Machine Authorization Option */}
+        <div style={{ padding: "14px", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", background: "hsl(var(--card))", display: "grid", gap: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong style={{ fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <Terminal size={16} />
+              <span>Authorize from Local Machine</span>
+            </strong>
+            {proxyState.running ? (
+              <span style={{ fontSize: "12px", color: "hsl(var(--primary))", fontWeight: 600 }}>Proxy active</span>
+            ) : proxyState.checked ? (
+              <span className="muted small">Proxy offline</span>
+            ) : null}
+          </div>
+
+          {proxyState.running ? (
+            <>
+              {detectedEmail ? (
+                <p className="muted small" style={{ margin: 0 }}>
+                  Detected: <strong>{detectedEmail}</strong> (from local session)
+                </p>
+              ) : null}
+              <button
+                className="primary-button"
+                disabled={busy !== null}
+                onClick={() => void handleLocalAuthorize()}
+                type="button"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                <Terminal size={16} />
+                <span>{busy === "local" ? "Waiting for confirmation in your terminal..." : "Authorize from Local Machine"}</span>
+              </button>
+            </>
+          ) : (
+            <div style={{ display: "grid", gap: "6px" }}>
+              <button
+                className="outline-button"
+                disabled
+                type="button"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                <Terminal size={16} />
+                <span>Authorize from Local Machine</span>
+              </button>
+              <p className="muted small" style={{ margin: 0 }}>
+                Start prompt-meter-proxy to authorize locally
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "4px 0" }}>
+          <hr style={{ flex: 1, border: "0", borderTop: "1px solid hsl(var(--border))" }} />
+          <span className="muted small">or connect via email</span>
+          <hr style={{ flex: 1, border: "0", borderTop: "1px solid hsl(var(--border))" }} />
+        </div>
+
         <FormField
           autoComplete="email"
           label={`${toolInfo.label} account email`}
@@ -152,22 +278,24 @@ export function ConnectAccountDialog({ onClose, onLinked, returnTo }: { onClose:
         />
         <p className="muted">{toolInfo.hint} Prove it's yours with the sign-in that account uses:</p>
         <div className="method-list">
-          {METHODS_BY_TOOL[tool].map((method) => {
-            const missingClient = method !== "email-code" && !CLIENT_IDS[method];
-            return (
-              <button
-                className="outline-button"
-                disabled={busy !== null || missingClient}
-                key={method}
-                onClick={() => void begin(method)}
-                title={missingClient ? "Not set up on this app yet" : undefined}
-                type="button"
-              >
-                {method === "email-code" ? <Mail size={16} /> : <KeyRound size={16} />}
-                {busy === method ? "Starting..." : method === "email-code" ? "Email me a code" : `Continue with ${METHOD_LABELS[method]}`}
-              </button>
-            );
-          })}
+          {METHODS_BY_TOOL[tool]
+            .filter((method) => method !== "local")
+            .map((method) => {
+              const missingClient = method !== "email-code" && !CLIENT_IDS[method as OidcMethod];
+              return (
+                <button
+                  className="outline-button"
+                  disabled={busy !== null || missingClient}
+                  key={method}
+                  onClick={() => void begin(method)}
+                  title={missingClient ? "Not set up on this app yet" : undefined}
+                  type="button"
+                >
+                  {method === "email-code" ? <Mail size={16} /> : <KeyRound size={16} />}
+                  {busy === method ? "Starting..." : method === "email-code" ? "Email me a code" : `Continue with ${METHOD_LABELS[method]}`}
+                </button>
+              );
+            })}
         </div>
         {error ? <Alert tone="error">{error}</Alert> : null}
         <p className="muted small">Only your email address is checked. Prompt Meter gets no access to your {toolInfo.label} account or its data.</p>
@@ -175,3 +303,4 @@ export function ConnectAccountDialog({ onClose, onLinked, returnTo }: { onClose:
     </Modal>
   );
 }
+

@@ -17,9 +17,10 @@ function memoryStorage(): Storage {
 }
 
 describe("account linking helpers", () => {
-  it("offers only Google for Antigravity and all three for Codex", () => {
-    expect(METHODS_BY_TOOL["antigravity-cli"]).toEqual(["google"]);
-    expect(METHODS_BY_TOOL.codex).toEqual(["google", "microsoft", "email-code"]);
+  it("offers local and Google for Antigravity and all four for Codex", () => {
+    expect(METHODS_BY_TOOL["antigravity-cli"]).toEqual(["local", "google"]);
+    expect(METHODS_BY_TOOL.codex).toEqual(["local", "google", "microsoft", "email-code"]);
+    expect(METHODS_BY_TOOL["claude-code"]).toEqual(["local", "google", "email-code"]);
   });
 
   it("normalizes emails", () => {
@@ -68,6 +69,10 @@ describe("account linking helpers", () => {
     expect(linkErrorMessage("too_many_attempts")).toMatch(/Too many attempts\. Try again later/);
     expect(linkErrorMessage("limits_unavailable")).toMatch(/Couldn't check limits right now/);
     expect(linkErrorMessage("lookup_failed")).toMatch(/Couldn't check account details right now/);
+    expect(linkErrorMessage("proxy_unreachable")).toMatch(/prompt-meter-proxy/);
+    expect(linkErrorMessage("authorization_rejected")).toMatch(/cancelled in your terminal/);
+    expect(linkErrorMessage("authorization_timeout")).toMatch(/timed out/);
+    expect(linkErrorMessage("no_account_detected")).toMatch(/No local account was detected/);
     expect(linkErrorMessage("whatever", "fallback")).toBe("fallback");
   });
 });

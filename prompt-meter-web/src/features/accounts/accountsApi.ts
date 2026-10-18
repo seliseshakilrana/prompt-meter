@@ -82,3 +82,59 @@ export function completeLink(request: { challengeId: string; idToken?: string; c
 export function unlinkAccount(linkId: string): Promise<{ unlinked: true }> {
   return callWorkflow<{ unlinked: true }>("unlink-account", { linkId });
 }
+
+export async function checkLocalProxy(port = 8787): Promise<{ running: boolean; accounts: Record<string, string | null> }> {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/link/status`, {
+      method: "GET",
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) return { running: false, accounts: {} };
+    const data = (await response.json()) as { running?: boolean; accounts?: Record<string, string | null> };
+    return {
+      running: Boolean(data.running),
+      accounts: data.accounts ?? {}
+    };
+  } catch {
+    return { running: false, accounts: {} };
+  }
+}
+
+export async function authorizeFromLocalProxy(tool: LinkTool, userId: string, port = 8787): Promise<{ tool: LinkTool; email: string }> {
+  let response: Response;
+  try {
+    response = await fetch(`http://127.0.0.1:${port}/api/link/authorize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tool, userId })
+    });
+  } catch {
+    throw new LinkError("proxy_unreachable", 0);
+  }
+
+  const data = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+    tool?: LinkTool;
+    email?: string;
+    verifiedAt?: string;
+  };
+
+  if (!response.ok || !data.ok || !data.email) {
+    throw new LinkError(data.error ?? "authorization_failed", response.status, data as Record<string, unknown>);
+  }
+
+  const email = data.email;
+  const verifiedAt = data.verifiedAt ?? new Date().toISOString();
+
+  await blocksClient.data.collection<LinkedAccount>(SCHEMA, { fields: FIELDS }).create({
+    userId,
+    tool,
+    email,
+    method: "local",
+    verifiedAt
+  });
+
+  return { tool, email };
+}
+

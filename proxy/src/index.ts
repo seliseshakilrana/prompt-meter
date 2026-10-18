@@ -11,3 +11,11 @@ export { inferTool } from "./heuristics/tool.js";
 export { isBackgroundCall } from "./heuristics/background.js";
 export { startApp } from "./app.js";
 export { createAccountResolver, type AccountResolver } from "./accounts.js";
+export {
+  handleLocalLink,
+  resolveApproval,
+  promptInteractive,
+  LOCAL_LINK_CORS_HEADERS,
+  TOOL_NAMES,
+  type LocalLinkOptions,
+} from "./local-link.js";
