@@ -65,7 +65,7 @@ describe("local-link endpoints & CORS/PNA headers", () => {
     });
 
     expect(res.status).toBe(204);
-    expect(res.headers["access-control-allow-origin"]).toBe("*");
+    expect(res.headers["access-control-allow-origin"]).toBe("https://dbbvxg-eptqw.slsblx.com");
     expect(res.headers["access-control-allow-private-network"]).toBe("true");
     expect(res.headers["access-control-allow-methods"]).toBe("GET, POST, OPTIONS");
     expect(res.headers["access-control-allow-headers"]).toContain("Content-Type");

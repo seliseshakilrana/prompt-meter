@@ -25,7 +25,8 @@ async function main(argv: string[]): Promise<number> {
       help: { type: "boolean", short: "h" },
     },
   });
-  if (values.help || positionals[0] !== "start") {
+  const isStart = positionals.length === 0 || positionals[0] === "start";
+  if (values.help || !isStart) {
     process.stdout.write(USAGE);
     return values.help ? 0 : 1;
   }

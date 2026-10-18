@@ -5,6 +5,7 @@ import { linkingConfig } from "../../lib/blocks/config";
 import { Alert } from "../../shared/ui/Alert";
 import { FormField } from "../../shared/ui/FormField";
 import { Modal } from "../../shared/ui/Modal";
+import { useAuth } from "../../app/providers/AuthProvider";
 import { useCurrentUser } from "../profile/useCurrentUser";
 import {
   authorizeFromLocalProxy,
@@ -59,7 +60,13 @@ export function ConnectAccountDialog({
   userId?: string;
 }) {
   const me = useCurrentUser();
-  const effectiveUserId = userId ?? me.data?.data?.itemId ?? (me.data?.data as Record<string, unknown> | undefined)?.id as string | undefined;
+  const { claims } = useAuth();
+  const effectiveUserId =
+    userId ??
+    me.data?.data?.itemId ??
+    ((me.data?.data as Record<string, unknown> | undefined)?.id as string | undefined) ??
+    (claims?.sub as string | undefined) ??
+    (claims?.userId as string | undefined);
 
   const [tool, setTool] = useState<LinkTool>("claude-code");
   const [email, setEmail] = useState("");

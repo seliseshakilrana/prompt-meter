@@ -133,16 +133,21 @@ export async function handleLocalLink(
   const qIdx = rawUrl.indexOf("?");
   const pathPart = qIdx === -1 ? rawUrl : rawUrl.slice(0, qIdx);
   const method = req.method ?? "GET";
+  const origin = (req.headers.origin as string) || "*";
+  const corsHeaders = {
+    ...LOCAL_LINK_CORS_HEADERS,
+    "Access-Control-Allow-Origin": origin,
+  };
 
   if (method === "OPTIONS") {
-    res.writeHead(204, LOCAL_LINK_CORS_HEADERS);
+    res.writeHead(204, corsHeaders);
     res.end();
     return;
   }
 
   if (pathPart === "/api/link/status") {
     if (method !== "GET") {
-      res.writeHead(405, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(405, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "method_not_allowed" }));
       return;
     }
@@ -152,25 +157,25 @@ export async function handleLocalLink(
       "claude-code": accounts ? accounts("claude-code") : null,
       codex: accounts ? accounts("codex") : null,
     };
-    res.writeHead(200, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+    res.writeHead(200, { ...corsHeaders, "Content-Type": "application/json" });
     res.end(JSON.stringify({ running: true, accounts: detectedAccounts }));
     return;
   }
 
   if (pathPart === "/api/link/ping") {
     if (method !== "GET") {
-      res.writeHead(405, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(405, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "method_not_allowed" }));
       return;
     }
-    res.writeHead(200, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+    res.writeHead(200, { ...corsHeaders, "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, running: true }));
     return;
   }
 
   if (pathPart === "/api/link/authorize" || pathPart === "/api/link/request") {
     if (method !== "POST") {
-      res.writeHead(405, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(405, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "method_not_allowed" }));
       return;
     }
@@ -179,13 +184,13 @@ export async function handleLocalLink(
     try {
       body = await readJsonBody(req);
     } catch {
-      res.writeHead(400, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(400, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "invalid_request" }));
       return;
     }
 
     if (!body || typeof body !== "object" || typeof (body as Record<string, unknown>).tool !== "string") {
-      res.writeHead(400, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(400, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "invalid_request" }));
       return;
     }
@@ -193,7 +198,7 @@ export async function handleLocalLink(
     const tool = (body as Record<string, unknown>).tool as string;
     const email = opts.accounts ? opts.accounts(tool as Tool) : null;
     if (!email) {
-      res.writeHead(404, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(404, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "no_account_detected" }));
       return;
     }
@@ -204,22 +209,22 @@ export async function handleLocalLink(
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code || (err as Error)?.message;
       if (code === "authorization_timeout") {
-        res.writeHead(408, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+        res.writeHead(408, { ...corsHeaders, "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, error: "authorization_timeout" }));
         return;
       }
-      res.writeHead(500, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(500, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "internal_error" }));
       return;
     }
 
     if (!approved) {
-      res.writeHead(403, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+      res.writeHead(403, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "authorization_rejected" }));
       return;
     }
 
-    res.writeHead(200, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+    res.writeHead(200, { ...corsHeaders, "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
         ok: true,
@@ -231,6 +236,6 @@ export async function handleLocalLink(
     return;
   }
 
-  res.writeHead(404, { ...LOCAL_LINK_CORS_HEADERS, "Content-Type": "application/json" });
+  res.writeHead(404, { ...corsHeaders, "Content-Type": "application/json" });
   res.end(JSON.stringify({ ok: false, error: "not_found" }));
 }
