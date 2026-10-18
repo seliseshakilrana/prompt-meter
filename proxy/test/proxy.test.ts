@@ -173,7 +173,7 @@ describe("what gets recorded", () => {
       [
         "eventId", "tool", "provider", "model", "sessionId", "promptId", "callIndex", "totalInputTokens", "uncachedInputTokens",
         "cacheReadTokens", "cacheWrite5mTokens", "cacheWrite1hTokens", "outputTokens", "thinkingTokens", "serverToolRequests",
-        "speed", "promptPreview", "projectTag", "occurredAt",
+        "speed", "promptPreview", "projectTag", "accountEmail", "occurredAt",
       ].sort(),
     );
     expect(event).toMatchObject({
@@ -185,6 +185,7 @@ describe("what gets recorded", () => {
       speed: "fast",
       promptPreview: "please fix the login bug",
       projectTag: null,
+      accountEmail: null,
     });
     expect(new Date(event.occurredAt).toISOString()).toBe(event.occurredAt);
   });

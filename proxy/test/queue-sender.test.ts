@@ -30,6 +30,7 @@ function ev(i: number, extra: Partial<UsageEvent> = {}): UsageEvent {
     speed: null,
     promptPreview: null,
     projectTag: null,
+    accountEmail: null,
     occurredAt: "2026-10-17T09:30:00.000Z",
     ...extra,
   };

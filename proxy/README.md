@@ -66,13 +66,16 @@ Default file: `~/.config/prompt-meter/config.json` (or `$XDG_CONFIG_HOME/prompt-
   "queuePath": "~/.local/state/prompt-meter/queue.db",
   "sessionGapMinutes": 30,
   "flushIntervalMs": 10000,
-  "batchSize": 50
+  "batchSize": 50,
+  "detectAccounts": true,
+  "accounts": { "codex": "me@example.com" }
 }
 ```
 
 - `keys` holds per-key settings, looked up by the key's 8-character prefix or by the full key. `sendPreview: false` means `promptPreview` is always `null` for that key.
 - Environment variables: `PROMPT_METER_CONFIG`, `PROMPT_METER_HOST`, `PROMPT_METER_PORT`, `PROMPT_METER_INGEST_URL`, `PROMPT_METER_DEFAULT_KEY` (or `PROMPT_METER_KEY`), `PROMPT_METER_QUEUE_PATH`, `PROMPT_METER_ANTHROPIC_UPSTREAM`, `PROMPT_METER_OPENAI_UPSTREAM`, `PROMPT_METER_GEMINI_UPSTREAM`, `PROMPT_METER_SINK` (`ingest` or `stdout`), `PROMPT_METER_LOG_LEVEL` (`debug`, `info`, `warn`, `error`).
 - **Choosing the key:** the request header `X-Prompt-Meter-Key` comes first, then `defaultKey`. The header is removed before the request goes upstream. With no key at all, events are dropped with a warning.
+- **Tool accounts:** every event carries `accountEmail`, the account the tool is signed in with. It is read from the tool's own files: Claude Code `~/.claude.json` (`oauthAccount.emailAddress`, or `$CLAUDE_CONFIG_DIR/.claude.json`), Codex `~/.codex/auth.json` (email claim of `tokens.id_token`, or `$CODEX_HOME`), Antigravity `~/.gemini/jetski-standalone-oauth-token` or `~/.gemini/google_accounts.json` (the Antigravity CLI's own token file has no ID token, so detection falls back to the Antigravity IDE's token file; if only the CLI is installed, `accountEmail` is `null`; if CLI and IDE use different Google accounts, detection finds the IDE's; in both cases, set `accounts["antigravity-cli"]` in config). Only the email is read; tokens are never logged or sent. Re-read every 60 s. `accounts` in the config wins over detection; `detectAccounts: false` or `PROMPT_METER_DETECT_ACCOUNTS=0` turns detection off. The portal shows usage as verified only for accounts you connected there.
 - Logs never show provider API keys or full ingest keys. Ingest keys appear only as `pm_<prefix>_…`.
 
 ## Pointing your tools at the proxy

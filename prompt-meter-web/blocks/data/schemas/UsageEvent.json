@@ -144,6 +144,18 @@
       "description": "Optional project label from the collector."
     },
     {
+      "name": "accountEmail",
+      "type": "String",
+      "isArray": false,
+      "description": "Tool account email the proxy detected on the user's machine, lowercased; null when none."
+    },
+    {
+      "name": "accountVerified",
+      "type": "Boolean",
+      "isArray": false,
+      "description": "True when the key owner linked that tool account (LinkedAccount) at ingest time."
+    },
+    {
       "name": "occurredAt",
       "type": "DateTime",
       "isArray": false,

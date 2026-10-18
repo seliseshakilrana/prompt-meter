@@ -17,7 +17,8 @@ const HELPER_DEPS = {
   "graphql": [],
   "workflow-io": [],
   "rollup": ["workflow-io"],
-  "manual-entry": ["validate-event", "redact", "ingest-key"]
+  "manual-entry": ["validate-event", "redact", "ingest-key"],
+  "account-link": ["sha256", "ingest-key", "workflow-io"]
 };
 
 function resolveHelpers(names) {

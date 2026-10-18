@@ -9,9 +9,24 @@ import { ProfilePage } from "../../features/profile/ProfilePage";
 import PricesPage from "../../features/admin/PricesPage";
 import SeedPage from "../../features/admin/SeedPage";
 import MyUsagePage from "../../features/usage/MyUsagePage";
+import AccountsPage from "../../features/accounts/AccountsPage";
+import LinkCallbackPage from "../../features/accounts/LinkCallbackPage";
+import { RequireLinkedAccount } from "../../features/accounts/RequireLinkedAccount";
+import { LINK_CALLBACK_PATH } from "../../features/accounts/linking";
+
+// My usage opens only once the user has a connected tool account (when linking is on).
+function GatedMyUsagePage() {
+  return (
+    <RequireLinkedAccount returnTo="/">
+      <MyUsagePage />
+    </RequireLinkedAccount>
+  );
+}
 
 const protectedRoutes: Record<string, React.ComponentType> = {
-  "/": MyUsagePage,
+  "/": GatedMyUsagePage,
+  "/accounts": AccountsPage,
+  [LINK_CALLBACK_PATH]: LinkCallbackPage,
   "/prices": PricesPage,
   "/admin/seed": SeedPage,
   "/profile": ProfilePage,

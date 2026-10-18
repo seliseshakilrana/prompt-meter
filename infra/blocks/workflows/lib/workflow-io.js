@@ -59,22 +59,101 @@ function extractTotalCount(result) {
   return null;
 }
 
+// Impacted rows from an update/delete mutation result, or null.
+function extractTotalImpactedData(result) {
+  let value = unwrapOutput(result);
+  for (let depth = 0; depth < 6 && isPlainObject(value); depth++) {
+    if (typeof value.totalImpactedData === "number") return value.totalImpactedData;
+    const next = value.data !== undefined ? value.data : value.output !== undefined ? value.output : null;
+    if (next !== null) { value = next; continue; }
+    const keys = Object.keys(value).filter(function (k) { return k !== "errors" && k !== "extensions"; });
+    if (keys.length === 1 && isPlainObject(value[keys[0]])) {
+      value = value[keys[0]];
+      continue;
+    }
+    for (let i = 0; i < keys.length; i++) {
+      if (isPlainObject(value[keys[i]]) && typeof value[keys[i]].totalImpactedData === "number") {
+        return value[keys[i]].totalImpactedData;
+      }
+    }
+    return null;
+  }
+  return null;
+}
+
+function isHttpErrorCode(code) {
+  if (typeof code === "number") return isFinite(code) && code >= 400;
+  if (typeof code === "string" && /^\s*\d+\s*$/.test(code)) return Number(code) >= 400;
+  return false;
+}
+
+// Removes json/output envelope wrappers up to 4 layers deep.
+function unwrapEnvelope(value) {
+  let v = value;
+  for (let i = 0; i < 4 && isPlainObject(v); i++) {
+    if (v.json !== undefined && isPlainObject(v.json)) v = v.json;
+    else if (v.output !== undefined && isPlainObject(v.output)) v = v.output;
+    else break;
+  }
+  return v;
+}
+
 // True when a GraphQL / dataAction result reports an error.
 function resultErrors(result) {
-  const value = unwrapOutput(result);
   const errors = [];
+
   const visit = function (v, depth) {
-    if (!isPlainObject(v) || depth > 4) return;
-    if (Array.isArray(v.errors) && v.errors.length) errors.push.apply(errors, v.errors);
-    if (v.isSuccess === false) errors.push(v.message || v.errors || "isSuccess=false");
+    if (!isPlainObject(v) || depth > 6) return;
+
+    if (Array.isArray(v.errors) && v.errors.length > 0) errors.push.apply(errors, v.errors);
+    else if (isPlainObject(v.errors) && Object.keys(v.errors).length > 0) errors.push(v.errors);
+    else if (typeof v.errors === "string" && v.errors.length > 0) errors.push(v.errors);
+
+    if (typeof v.error === "string" && v.error.length > 0) errors.push(v.error);
+    else if (isPlainObject(v.error) && Object.keys(v.error).length > 0) errors.push(v.error);
+    else if (v.error === true) errors.push(v.message || "error=true");
+    else if (typeof v.error === "number" && v.error !== 0 && !isNaN(v.error)) errors.push(v.message || ("error=" + v.error));
+
+    if (v.ok === false) errors.push(v.message || "ok=false");
+    if (v.success === false) errors.push(v.message || "success=false");
+    if (v.isSuccess === false) errors.push(v.message || (isPlainObject(v.errors) && Object.keys(v.errors).length > 0 ? v.errors : null) || "isSuccess=false");
     if (v.acknowledged === false) errors.push(v.message || "acknowledged=false");
+
+    if (isHttpErrorCode(v.statusCode)) errors.push(v.message || ("statusCode=" + v.statusCode));
+    if (isHttpErrorCode(v.status)) errors.push(v.message || ("status=" + v.status));
+    if (isHttpErrorCode(v.httpStatusCode)) errors.push(v.message || ("httpStatusCode=" + v.httpStatusCode));
+
     const keys = Object.keys(v);
     for (let i = 0; i < keys.length; i++) {
-      if (keys[i] !== "errors") visit(v[keys[i]], depth + 1);
+      if (keys[i] !== "errors" && keys[i] !== "items") visit(v[keys[i]], depth + 1);
     }
   };
-  visit(value, 0);
+
+  visit(result, 0);
   return errors;
+}
+
+// Strict lookup helper for dataAction getData / rawQuery results.
+// Returns { ok: true, items: [...] } only when there are no errors and an actual
+// items array was found; otherwise { ok: false }.
+function lookupItems(result) {
+  if (resultErrors(result).length > 0) return { ok: false };
+  let value = result;
+  for (let depth = 0; depth < 8 && value != null; depth++) {
+    if (Array.isArray(value)) return { ok: true, items: value };
+    if (!isPlainObject(value)) return { ok: false };
+    if (Array.isArray(value.items)) return { ok: true, items: value.items };
+    if (value.json !== undefined) { value = value.json; continue; }
+    if (value.data !== undefined) { value = value.data; continue; }
+    if (value.output !== undefined) { value = value.output; continue; }
+    const keys = Object.keys(value).filter(function (k) { return k !== "errors" && k !== "extensions"; });
+    if (keys.length === 1 && (isPlainObject(value[keys[0]]) || Array.isArray(value[keys[0]]))) {
+      value = value[keys[0]];
+      continue;
+    }
+    return { ok: false };
+  }
+  return { ok: false };
 }
 
 function headerValue(headers, name) {
@@ -118,7 +197,7 @@ function readWebhookRequest(trigger) {
   let rawBody = null;
   for (let i = 0; i < bodyCandidates.length; i++) {
     const c = bodyCandidates[i];
-    if (isPlainObject(c) && (c.events !== undefined || c.collector !== undefined || c.action !== undefined || c.teamId !== undefined || c.keyId !== undefined || c.mode !== undefined)) {
+    if (isPlainObject(c) && (c.events !== undefined || c.collector !== undefined || c.action !== undefined || c.teamId !== undefined || c.keyId !== undefined || c.mode !== undefined || c.tool !== undefined || c.challengeId !== undefined || c.linkId !== undefined)) {
       return { headers: headers, body: c, rawBody: null, parseError: false };
     }
     if (typeof c === "string" && rawBody === null) rawBody = c;

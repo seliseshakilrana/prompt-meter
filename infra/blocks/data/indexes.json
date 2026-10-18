@@ -320,6 +320,82 @@
         }
       ],
       "purpose": "Team admin quota view."
+    },
+    {
+      "schemaName": "LinkedAccount",
+      "name": "tool_email_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "tool",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "email",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "One portal user per tool account; also stops a parallel second link."
+    },
+    {
+      "schemaName": "LinkedAccount",
+      "name": "userId",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Connected accounts page, the dashboard gate, and ingest's verified check."
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "name": "challengeId_unique",
+      "isUnique": true,
+      "fields": [
+        {
+          "fieldName": "challengeId",
+          "direction": "ASC"
+        }
+      ],
+      "purpose": "Challenge lookup by id."
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "name": "userId_createdAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "userId",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "createdAt",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Rate limit on link starts."
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "name": "tool_email_createdAt",
+      "isUnique": false,
+      "fields": [
+        {
+          "fieldName": "tool",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "email",
+          "direction": "ASC"
+        },
+        {
+          "fieldName": "createdAt",
+          "direction": "DESC"
+        }
+      ],
+      "purpose": "Per tool-account rate limits on email-code starts (at most 3 per 24 hours)."
     }
   ]
 }

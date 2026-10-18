@@ -1,6 +1,7 @@
 /** Wires config, queue, sender, sink and the proxy server together. */
 import type http from "node:http";
 import type { AddressInfo } from "node:net";
+import { createAccountResolver, detectedTools } from "./accounts.js";
 import type { Config } from "./config.js";
 import { keyLabel, log } from "./log.js";
 import { createProxyServer } from "./proxy.js";
@@ -33,7 +34,8 @@ export async function startApp(cfg: Config): Promise<RunningApp> {
     sender.start();
   }
 
-  const server = createProxyServer({ config: cfg, sink });
+  const accounts = createAccountResolver({ overrides: cfg.accounts, detect: cfg.detectAccounts });
+  const server = createProxyServer({ config: cfg, sink, accounts });
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(cfg.port, cfg.host, () => resolve());
@@ -43,6 +45,7 @@ export async function startApp(cfg: Config): Promise<RunningApp> {
     sink: cfg.sink,
     defaultKey: keyLabel(cfg.defaultKey),
     queued: queue?.count() ?? 0,
+    accountsFor: detectedTools(accounts),
   });
 
   return {

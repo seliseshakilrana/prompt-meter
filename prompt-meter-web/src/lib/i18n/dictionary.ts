@@ -4,6 +4,7 @@ export const defaultDictionary = {
   "nav.prices": "Prices",
   "nav.seed": "Seed data",
   "nav.profile": "Profile",
+  "nav.accounts": "Connected accounts",
   "nav.logout": "Log out",
   "theme.label": "Switch theme",
   "theme.light": "Light",

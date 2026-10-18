@@ -35,6 +35,7 @@ Body:
       "speed": "standard",
       "promptPreview": "string (≤100 chars, already cleaned) or null",
       "projectTag": "string or null",
+      "accountEmail": "string or null",
       "occurredAt": "2026-10-17T09:30:00.000Z"
     }
   ]
@@ -49,6 +50,7 @@ Field rules:
 - **Token fields:** whole numbers ≥ 0, normalized as in PLAN.md → *Token normalization*. `thinkingTokens` may be `null` when the provider doesn't report it.
 - `speed`: `standard`, `fast`, or `null`.
 - `occurredAt`: an ISO 8601 UTC timestamp, taken when the proxy finished reading the response.
+- `accountEmail` (optional): the account the tool is signed in with on that machine, as the proxy detected it. Lowercased by the ingest; a malformed value is stored as `null`, not rejected. The ingest sets `accountVerified: true` only when the key owner has linked that tool + email (LinkedAccount). It never changes whose usage the event is.
 - **The proxy never sends** `userId`, `teamId`, `costUsd`, `source` or `pricingStatus`. The workflow sets them. If any of them arrive, they are ignored.
 
 ## Ingest key

@@ -1,0 +1,7 @@
+{
+  "about": "Mail template for the link-start workflow's email-code method. Create it once with `blocks mail template save --file infra/blocks/mail/link-code.json --dry-run --json`, then `--yes` after approval. TODO(spike): the placeholder syntax for bodyDataContext values ({{code}} assumed) and whether the sendMail node's `template` matches `name` or needs the template's itemId / purpose.",
+  "name": "prompt-meter-link-code",
+  "language": "en-US",
+  "subject": "Your Prompt Meter verification code",
+  "templateBody": "<p>Your code to connect your {{toolName}} account to Prompt Meter is:</p><p style=\"font-size:24px;font-weight:600;letter-spacing:4px\">{{code}}</p><p>It works once and expires in 10 minutes. If you didn't ask for it, ignore this email: nothing is connected without the code.</p>"
+}

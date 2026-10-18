@@ -13,12 +13,15 @@
  *   "queuePath": "~/.local/state/prompt-meter/queue.db",
  *   "sessionGapMinutes": 30,
  *   "flushIntervalMs": 10000,
- *   "batchSize": 50
+ *   "batchSize": 50,
+ *   "detectAccounts": true,                               // read each tool's signed-in email
+ *   "accounts": { "claude-code": "me@example.com" }       // optional; wins over detection
  * }
  */
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import type { LinkableTool } from "./accounts.js";
 import type { RouteName } from "./adapters/index.js";
 import { keyPrefix } from "./log.js";
 
@@ -39,6 +42,8 @@ export interface Config {
   flushIntervalMs: number;
   batchSize: number;
   sink: "ingest" | "stdout";
+  detectAccounts: boolean;
+  accounts: Partial<Record<LinkableTool, string>>;
 }
 
 export const DEFAULT_UPSTREAMS: Record<RouteName, string> = {
@@ -71,6 +76,8 @@ export function defaultConfig(): Config {
     flushIntervalMs: 10_000,
     batchSize: 50,
     sink: "ingest",
+    detectAccounts: true,
+    accounts: {},
   };
 }
 
@@ -91,7 +98,7 @@ export function loadConfig(overrides: CliOverrides = {}, env: NodeJS.ProcessEnv 
   const file = explicitPath ? expandHome(explicitPath) : defaultConfigPath();
   if (fs.existsSync(file)) {
     const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<Config>;
-    Object.assign(cfg, { ...raw, upstreams: { ...cfg.upstreams, ...(raw.upstreams ?? {}) }, keys: raw.keys ?? {} });
+    Object.assign(cfg, { ...raw, upstreams: { ...cfg.upstreams, ...(raw.upstreams ?? {}) }, keys: raw.keys ?? {}, accounts: raw.accounts ?? {} });
   } else if (explicitPath) {
     throw new Error(`config file not found: ${file}`);
   }
@@ -105,6 +112,7 @@ export function loadConfig(overrides: CliOverrides = {}, env: NodeJS.ProcessEnv 
   if (env.PROMPT_METER_ANTHROPIC_UPSTREAM) cfg.upstreams.anthropic = env.PROMPT_METER_ANTHROPIC_UPSTREAM;
   if (env.PROMPT_METER_OPENAI_UPSTREAM) cfg.upstreams.openai = env.PROMPT_METER_OPENAI_UPSTREAM;
   if (env.PROMPT_METER_GEMINI_UPSTREAM) cfg.upstreams.gemini = env.PROMPT_METER_GEMINI_UPSTREAM;
+  if (env.PROMPT_METER_DETECT_ACCOUNTS === "0" || env.PROMPT_METER_DETECT_ACCOUNTS === "false") cfg.detectAccounts = false;
   if (env.PROMPT_METER_SINK === "stdout" || env.PROMPT_METER_SINK === "ingest") cfg.sink = env.PROMPT_METER_SINK;
 
   if (overrides.port !== undefined) cfg.port = overrides.port;

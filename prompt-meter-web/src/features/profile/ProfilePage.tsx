@@ -2,6 +2,7 @@ import { Clock, Mail, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { blocksConfig } from "../../lib/blocks/config";
+import { LinkedAccountsPanel } from "../accounts/LinkedAccountsPanel";
 import { useT } from "../../lib/i18n/LocalizationProvider";
 import { ActionButton } from "../../shared/ui/ActionButton";
 import { ChipList } from "../../shared/ui/Chip";
@@ -54,6 +55,8 @@ export function ProfilePage() {
         <DetailCard icon={<ShieldCheck size={16} />} label="Tenant id (x-blocks-key)" value={blocksConfig.xBlocksKey} />
         <DetailCard icon={<Clock size={16} />} label="Session expires" value={expiresAt?.toLocaleString()} />
       </div>
+
+      <LinkedAccountsPanel returnTo="/profile" />
 
       <div className="panel">
         <div className="panel-title"><ShieldCheck size={16} /><span>Roles</span></div>

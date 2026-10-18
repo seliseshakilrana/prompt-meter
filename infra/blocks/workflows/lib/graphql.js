@@ -19,7 +19,9 @@ const QUERY_NAMES = {
   TeamHourly: "TeamHourlys",
   IngestKey: "IngestKeys",
   ModelPrice: "ModelPrices",
-  RollupState: "RollupStates"
+  RollupState: "RollupStates",
+  LinkedAccount: "LinkedAccounts",
+  LinkChallenge: "LinkChallenges"
 };
 const MAX_PAGE_SIZE = 10000;
 
@@ -53,12 +55,21 @@ function gqlFieldList(fields) {
   return fields.join(" ");
 }
 
-// query { getX(input: {pageNo: 1, pageSize: n}, where: {...}) { items { ... } totalCount } }
-function buildListQuery(schemaName, where, fields, pageSize) {
+// query { getX(input: {pageNo: 1, pageSize: n, sort: ...}, where: {...}) { items { ... } totalCount } }
+// TODO(spike): confirm sorting syntax against the live gateway:
+//   - whether `sort` belongs inside `input: { ... sort: ... }` (as DynamicQueryInput in the CRUD skill suggests)
+//     or as a top-level argument beside `where`;
+//   - whether descending order is expressed as `{ createdAt: -1 }`, `sort: { createdAt: "desc" }`,
+//     or `sort: "-createdAt"`.
+function buildListQuery(schemaName, where, fields, pageSize, sort) {
   const queryName = "get" + QUERY_NAMES[schemaName];
   const size = Math.min(pageSize || MAX_PAGE_SIZE, MAX_PAGE_SIZE);
+  let inputStr = "pageNo: 1, pageSize: " + size;
+  if (sort) {
+    inputStr += ", sort: " + gqlValue(sort);
+  }
   return (
-    "query { " + queryName + "(input: { pageNo: 1, pageSize: " + size + " }" +
+    "query { " + queryName + "(input: { " + inputStr + " }" +
     (where ? ", where: " + gqlValue(where) : "") +
     ") { items { " + gqlFieldList(fields) + " } totalCount } }"
   );
@@ -72,6 +83,18 @@ function filterString(filter) {
 function itemIdFilter(itemId) {
   // TODO(spike): the gateway may expect {"_id": ...} or {"ItemId": ...}.
   return filterString({ _id: itemId });
+}
+
+// Conditional filter to claim a challenge before checking code or token (Fix 1).
+// TODO(spike): confirm the gateway's update filter format (assumed Mongo-style JSON with challengeId, usedAt: null, attempts: n; gateway may also accept _id).
+function challengeClaimFilter(challengeId, attempts, itemId) {
+  const filter = {
+    challengeId: challengeId,
+    usedAt: null,
+    attempts: typeof attempts === "number" ? attempts : 0
+  };
+  if (itemId) filter._id = itemId;
+  return filterString(filter);
 }
 
 function insertManyField(alias, schemaName, rows) {

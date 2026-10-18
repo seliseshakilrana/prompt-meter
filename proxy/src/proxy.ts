@@ -14,6 +14,7 @@
  */
 import http from "node:http";
 import https from "node:https";
+import type { AccountResolver } from "./accounts.js";
 import { ADAPTERS, type RouteName } from "./adapters/index.js";
 import { type Config, previewEnabled } from "./config.js";
 import { type Assignment, PromptTracker } from "./grouping.js";
@@ -43,6 +44,8 @@ export interface ProxyOptions {
   config: Pick<Config, "upstreams" | "defaultKey" | "keys" | "sendPreview" | "sessionGapMinutes">;
   sink: EventSink;
   tracker?: PromptTracker;
+  /** Account email per tool (default: none). */
+  accounts?: AccountResolver;
   /** Side copies larger than this are not parsed (default 64 MB). */
   maxCaptureBytes?: number;
 }
@@ -203,12 +206,13 @@ export function createProxyServer(opts: ProxyOptions): http.Server {
             if (!usage || !assignment) return;
             const occurredAt = new Date().toISOString();
             const model = usage.model ?? reqInfo.requestModel ?? "unknown";
+            const tool = inferTool(adapter.provider, headerValue(req.headers, "user-agent"));
             const eventId =
               usage.responseId ??
               "pm_" + sha256Hex(adapter.provider + model + occurredAt + usage.totalInputTokens + usage.outputTokens);
             const event: UsageEvent = {
               eventId,
-              tool: inferTool(adapter.provider, headerValue(req.headers, "user-agent")),
+              tool,
               provider: adapter.provider,
               model,
               sessionId: assignment.sessionId,
@@ -225,6 +229,7 @@ export function createProxyServer(opts: ProxyOptions): http.Server {
               speed: usage.speed,
               promptPreview: previewEnabled(opts.config, ingestKey) ? makePreview(assignment.prompt.text) : null,
               projectTag: null,
+              accountEmail: opts.accounts ? opts.accounts(tool) : null,
               occurredAt,
             };
             opts.sink.emit(ingestKey, event);

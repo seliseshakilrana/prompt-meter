@@ -1,0 +1,6 @@
+{
+  "about": "Public OAuth client ids the link-complete workflow checks ID-token audiences against. Not secrets (the browser sends them too). Replace the placeholders with the ids from the Google OAuth client (Web application) and the Microsoft Entra app registration, then run `node infra/blocks/workflows/build.js`. While a placeholder is left in, that provider answers 503 provider_not_configured.",
+  "googleClientId": "__SET_GOOGLE_CLIENT_ID__",
+  "microsoftClientId": "__SET_MICROSOFT_CLIENT_ID__",
+  "mailTemplate": "prompt-meter-link-code"
+}

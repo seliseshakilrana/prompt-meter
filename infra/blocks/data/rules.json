@@ -5,7 +5,8 @@
     "Every schema except ModelPrice READ is accessLevel 3 (Custom), so anything without an allow policy is denied to browser users. WRITE/EDIT/DELETE on UsageEvent, UserHourly, TeamHourly and IngestKey deliberately have no allow policies: only workflows write them.",
     "TODO(spike): which identity workflows (dataAction with blocksAuthentication) act as, and whether Custom security without allow policies also blocks them. If it does, add a role/identity-scoped allow policy for the workflow identity on those operations.",
     "TODO(spike): per-organization roles. $currentUser.organizationIdsWithRole:team-admin assumes Blocks can match a row field against the organizations where the viewer holds a role. If it can't, fall back to: team-admin views served by a blocksAuthorization workflow that checks the role, and rows readable only by owner + platform-admin.",
-    "TODO(spike): CLS on promptPreview must hide the column from team-admin and platform-admin as well. If CLS can't be row-conditional (owner of THAT row), move previews into a separate UsagePreview schema (eventId, userId, preview) with owner-only RLS, and drop promptPreview from UsageEvent."
+    "TODO(spike): CLS on promptPreview must hide the column from team-admin and platform-admin as well. If CLS can't be row-conditional (owner of THAT row), move previews into a separate UsagePreview schema (eventId, userId, preview) with owner-only RLS, and drop promptPreview from UsageEvent.",
+    "LinkedAccount and LinkChallenge: no browser write policies (workflows only). LinkChallenge has no read policy at all; nonce and codeHash are also hidden by CLS."
   ],
   "security": [
     {
@@ -233,6 +234,62 @@
       "fieldNames": []
     },
     {
+      "schemaName": "LinkedAccount",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkedAccount",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkedAccount",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkedAccount",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "operation": 1,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
       "schemaName": "UsageEvent",
       "operation": 0,
       "policyType": 1,
@@ -250,6 +307,16 @@
         "keyHash",
         "rateWindowStart",
         "rateWindowCount"
+      ]
+    },
+    {
+      "schemaName": "LinkChallenge",
+      "operation": 0,
+      "policyType": 1,
+      "accessLevel": 3,
+      "fieldNames": [
+        "nonce",
+        "codeHash"
       ]
     }
   ],
@@ -703,6 +770,28 @@
       "ruleGroup": {
         "combinator": "and",
         "rules": [
+          {
+            "currentUserRole": "platform-admin"
+          }
+        ]
+      },
+      "priority": 10,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "LinkedAccount",
+      "policyName": "linked-account-read",
+      "policyDescription": "Owner reads their own linked tool accounts (connected accounts page, dashboard gate); platform-admin reads all. Writes: link-complete / unlink-account workflows only, so no browser can add an unverified link.",
+      "policyType": 0,
+      "operation": 0,
+      "ruleGroup": {
+        "combinator": "or",
+        "rules": [
+          {
+            "field": "userId",
+            "operator": "equals",
+            "value": "$currentUser.userId"
+          },
           {
             "currentUserRole": "platform-admin"
           }

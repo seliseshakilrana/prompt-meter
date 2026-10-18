@@ -1,13 +1,21 @@
 // Code node "Prepare Events" (ingest.json). Mode: each.
 // For every event: validate, skip duplicates (already stored or repeated in the batch),
 // set userId/teamId from the key (never from the client), re-clean the preview (or drop
-// it when sendPreview is off), price it, and build one insertMany mutation.
+// it when sendPreview is off), price it, mark accountEmail verified when the key owner
+// linked that tool account, and build one insertMany mutation.
 // Helpers: workflow-io, graphql, validate-event, redact, cost.
 
 const parsed = nodeOutput($node, "Parse Request");
 const key = nodeOutput($node, "Verify Key");
 const prices = extractItems($node["Load Model Prices"] ? $node["Load Model Prices"].json : null);
 const existing = extractItems($node["Find Existing Events"] ? $node["Find Existing Events"].json : null);
+const linkedLookup = lookupItems($node && $node["Load Linked Accounts"]);
+const linked = linkedLookup.ok ? linkedLookup.items : [];
+
+const linkedAccounts = {};
+for (let i = 0; i < linked.length; i++) {
+  if (linked[i] && linked[i].tool && linked[i].email) linkedAccounts[linked[i].tool + "|" + String(linked[i].email).toLowerCase()] = true;
+}
 
 const stored = {};
 for (let i = 0; i < existing.length; i++) if (existing[i] && existing[i].eventId) stored[existing[i].eventId] = true;
@@ -56,6 +64,8 @@ for (let i = 0; i < events.length; i++) {
     pricingStatus: cost.pricingStatus,
     promptPreview: cleanPreview(e.promptPreview, key.sendPreview === true),
     projectTag: e.projectTag,
+    accountEmail: e.accountEmail,
+    accountVerified: !!e.accountEmail && linkedAccounts[e.tool + "|" + e.accountEmail] === true,
     occurredAt: e.occurredAt,
     receivedAt: receivedAt
   });

@@ -24,6 +24,8 @@ export interface UsageEvent {
   speed: Speed;
   promptPreview: string | null;
   projectTag: string | null;
+  /** Account the tool is signed in with on this machine (see accounts.ts), or null. */
+  accountEmail: string | null;
   occurredAt: string;
 }
 

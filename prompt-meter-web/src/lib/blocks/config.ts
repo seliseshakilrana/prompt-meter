@@ -16,3 +16,16 @@ export function isBlocksConfigured(): boolean {
 export function isLoginConfigured(): boolean {
   return Boolean(blocksConfig.apiUrl && blocksConfig.oidcUrl && blocksConfig.oidcClientId);
 }
+
+// Connected AI accounts (features/accounts). The OAuth client ids are public; the same
+// ids go into infra/blocks/workflows/link-config.json so the workflow checks the audience.
+export const linkingConfig = {
+  // "on" locks My usage until the user has connected at least one tool account.
+  // Keep it "off" until the link workflows and the LinkedAccount schema are live.
+  enabled: import.meta.env.VITE_PM_ACCOUNT_LINKING === "on",
+  googleClientId: (import.meta.env.VITE_PM_GOOGLE_CLIENT_ID as string) || "",
+  microsoftClientId: (import.meta.env.VITE_PM_MICROSOFT_CLIENT_ID as string) || "",
+  // TODO(live): the URL a published webhook workflow answers on is not documented; set
+  // this to the base the workflow list shows (the path segment is appended, e.g. /link-start).
+  webhookBase: ((import.meta.env.VITE_PM_WORKFLOW_WEBHOOK_BASE as string) || "").replace(/\/+$/, "")
+};

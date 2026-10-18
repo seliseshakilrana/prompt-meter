@@ -36,6 +36,10 @@ Blocks SSO sets a **Secure, domain-scoped** session-related cookie as part of th
 
 `.cert/` is gitignored — each developer generates and trusts their own cert.
 
+## Connected accounts
+
+`/accounts` (and Profile) lets each user connect the Claude, Codex or Antigravity account email they use, proven with Google, Microsoft or an emailed code (`src/features/accounts/`). With `VITE_PM_ACCOUNT_LINKING=on`, My usage stays locked behind the connect prompt until one account is connected (the My usage gate is a UX gate, not a security boundary). Rate limits are enforced server-side: at most 5 starts in 15 minutes per caller (all methods), and per tool account (`tool + email`) for email-code: at most 3 email-code starts per 24 hours across all callers, whoever asks (each with 5 tries, so at most 15 guesses a day). Google / Microsoft starts stay limited by the per-caller limit only. If any gateway lookup returns errors, link workflows fail closed with 503 (`limits_unavailable` for link-start, `lookup_failed` for link-complete / unlink) instead of skipping limits or checks. It needs `VITE_PM_GOOGLE_CLIENT_ID`, `VITE_PM_MICROSOFT_CLIENT_ID` and `VITE_PM_WORKFLOW_WEBHOOK_BASE` (see `.env.example`), the redirect URI `<origin>/accounts/link/callback` registered with both providers, and the link workflows from `infra/blocks/` published. Leave it off until then.
+
 ## Blocks Release deployment
 
 The scaffold includes `Dockerfile` and `nginx.conf` for Blocks Release. The Release service must pass Docker build arg `ci_build=<environment>` plus the public `VITE_BLOCKS_*` build args documented in the Dockerfile. The generated `package.json` also provides `build:dev`, `build:test`, `build:stg`, `build:iat`, `build:uat`, `build:preprod`, `build:prodshadow`, and `build:prod` scripts for local checks.

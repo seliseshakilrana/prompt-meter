@@ -18,6 +18,7 @@
   "nav.seed": "Seed data",
   "nav.logout": "Log out",
   "nav.profile": "Profile",
+  "nav.accounts": "Connected accounts",
   "theme.label": "Switch theme",
   "theme.light": "Light",
   "theme.dark": "Dark",

@@ -29,6 +29,16 @@ function isIsoUtc(value) {
   return !isNaN(new Date(value).getTime());
 }
 
+// Optional account email the proxy detected for the tool. Not proof of anything: the
+// ingest marks it verified only when the key owner has linked that address.
+// A malformed value is dropped (null), not rejected.
+function optionalAccountEmail(value) {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (email.length < 3 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}
+
 function optionalString(value, maxChars) {
   if (value === null || value === undefined) return { ok: true, value: null };
   if (typeof value !== "string") return { ok: false };
@@ -88,6 +98,7 @@ function validateCollectorEvent(raw) {
       speed: raw.speed === undefined ? null : raw.speed,
       promptPreview: typeof raw.promptPreview === "string" ? raw.promptPreview : null,
       projectTag: tag.value,
+      accountEmail: optionalAccountEmail(raw.accountEmail),
       occurredAt: new Date(raw.occurredAt).toISOString()
     }
   };

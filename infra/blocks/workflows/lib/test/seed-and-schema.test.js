@@ -12,8 +12,8 @@ const schemas = Object.fromEntries(fs.readdirSync(schemaDir).filter((f) => f.end
 const fieldNames = (s) => schemas[s].fields.map((f) => f.name);
 const SYSTEM = ["ItemId", "CreatedDate", "CreatedBy", "LastUpdatedDate", "LastUpdatedBy", "Language", "OrganizationId", "Tags"];
 
-test("schemas: all eight, scalar types, no system fields, file name = schemaName", () => {
-  assert.deepEqual(Object.keys(schemas).sort(), ["Budget", "IngestKey", "ModelPrice", "QuotaSnapshot", "RollupState", "TeamHourly", "UsageEvent", "UserHourly"]);
+test("schemas: all ten, scalar types, no system fields, file name = schemaName", () => {
+  assert.deepEqual(Object.keys(schemas).sort(), ["Budget", "IngestKey", "LinkChallenge", "LinkedAccount", "ModelPrice", "QuotaSnapshot", "RollupState", "TeamHourly", "UsageEvent", "UserHourly"]);
   for (const s of Object.values(schemas)) {
     assert.ok(fs.existsSync(path.join(schemaDir, `${s.schemaName}.json`)));
     for (const f of s.fields) {
@@ -23,10 +23,22 @@ test("schemas: all eight, scalar types, no system fields, file name = schemaName
   }
 });
 
+test("every schema in infra/blocks/data/schemas is byte-identical to its copy in prompt-meter-web/blocks/data/schemas", () => {
+  const webSchemaDir = path.resolve(BLOCKS_DIR, "../../prompt-meter-web/blocks/data/schemas");
+  const infraFiles = fs.readdirSync(schemaDir).filter((f) => f.endsWith(".json")).sort();
+  const webFiles = fs.readdirSync(webSchemaDir).filter((f) => f.endsWith(".json")).sort();
+  assert.deepEqual(infraFiles, webFiles, "schema file lists match");
+  for (const f of infraFiles) {
+    const infraBytes = fs.readFileSync(path.join(schemaDir, f));
+    const webBytes = fs.readFileSync(path.join(webSchemaDir, f));
+    assert.deepEqual(infraBytes, webBytes, `${f} is byte-identical in both folders`);
+  }
+});
+
 test("UsageEvent has every PLAN.md field, including source", () => {
   assert.deepEqual(fieldNames("UsageEvent"), ["eventId", "source", "userId", "teamId", "tool", "provider", "model", "sessionId", "promptId", "callIndex",
     "totalInputTokens", "uncachedInputTokens", "cacheReadTokens", "cacheWrite5mTokens", "cacheWrite1hTokens", "outputTokens", "thinkingTokens",
-    "serverToolRequests", "speed", "costUsd", "pricingStatus", "promptPreview", "projectTag", "occurredAt", "receivedAt"]);
+    "serverToolRequests", "speed", "costUsd", "pricingStatus", "promptPreview", "projectTag", "accountEmail", "accountVerified", "occurredAt", "receivedAt"]);
 });
 
 test("the CLI's own local validators accept the schemas and rules (when the CLI is installed)", async (t) => {
@@ -58,6 +70,9 @@ test("rules: every schema has READ/WRITE/EDIT/DELETE security, policies target k
   assert.ok(cls.some((c) => c.startsWith("IngestKey.keyHash")));
   assert.ok(!rules.policies.some((p) => p.schemaName === "IngestKey" && p.operation !== 0), "no browser write policy on IngestKey");
   assert.ok(!rules.policies.some((p) => p.schemaName === "UsageEvent" && p.operation !== 0), "no browser write policy on UsageEvent");
+  assert.ok(!rules.policies.some((p) => p.schemaName === "LinkedAccount" && p.operation !== 0), "links are written by workflows only");
+  assert.ok(!rules.policies.some((p) => p.schemaName === "LinkChallenge"), "challenges are workflow-only");
+  assert.ok(cls.some((c) => c.startsWith("LinkChallenge.nonce,codeHash")));
 });
 
 test("indexes reference real fields; unique eventId and keyPrefix; <= 15 per schema", () => {
@@ -70,6 +85,8 @@ test("indexes reference real fields; unique eventId and keyPrefix; <= 15 per sch
   Object.values(count).forEach((n) => assert.ok(n <= 15));
   assert.ok(indexes.some((i) => i.schemaName === "UsageEvent" && i.isUnique && i.fields.length === 1 && i.fields[0].fieldName === "eventId"));
   assert.ok(indexes.some((i) => i.schemaName === "IngestKey" && i.isUnique && i.fields[0].fieldName === "keyPrefix"));
+  assert.ok(indexes.some((i) => i.schemaName === "LinkedAccount" && i.isUnique && i.fields.map((f) => f.fieldName).join() === "tool,email"));
+  assert.ok(indexes.some((i) => i.schemaName === "LinkChallenge" && i.isUnique && i.fields[0].fieldName === "challengeId"));
 });
 
 test("model-prices seed: only given rates, everything else null + needsPrice", () => {

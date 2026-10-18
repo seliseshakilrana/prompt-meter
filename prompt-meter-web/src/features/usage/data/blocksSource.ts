@@ -18,7 +18,7 @@ const HOURLY_FIELDS = ["userId", "teamId", "hourStart", "tool", "model", "source
 const TEAM_HOURLY_FIELDS = HOURLY_FIELDS.filter((field) => field !== "userId" && field !== "promptCount");
 const EVENT_FIELDS = [
   "eventId", "source", "userId", "teamId", "tool", "provider", "model", "sessionId", "promptId", "callIndex",
-  ...TOKEN_FIELDS, "speed", "costUsd", "pricingStatus", "promptPreview", "projectTag", "occurredAt", "receivedAt"
+  ...TOKEN_FIELDS, "speed", "costUsd", "pricingStatus", "promptPreview", "projectTag", "accountEmail", "accountVerified", "occurredAt", "receivedAt"
 ];
 
 const userHourly = blocksClient.data.collection<UserHourly>(SCHEMA.UserHourly, { fields: HOURLY_FIELDS });

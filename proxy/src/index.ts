@@ -10,3 +10,4 @@ export { makePreview, redactSecrets } from "./redact.js";
 export { inferTool } from "./heuristics/tool.js";
 export { isBackgroundCall } from "./heuristics/background.js";
 export { startApp } from "./app.js";
+export { createAccountResolver, type AccountResolver } from "./accounts.js";

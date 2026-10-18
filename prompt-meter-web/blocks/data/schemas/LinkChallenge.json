@@ -1,0 +1,86 @@
+{
+  "schemaName": "LinkChallenge",
+  "collectionName": "LinkChallenges",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "challengeId",
+      "type": "String",
+      "isArray": false,
+      "isUniqueData": true,
+      "description": "Random 24-character id handed to the caller."
+    },
+    {
+      "name": "userId",
+      "type": "String",
+      "isArray": false,
+      "description": "Portal user who started the link."
+    },
+    {
+      "name": "tool",
+      "type": "String",
+      "isArray": false,
+      "description": "claude-code | codex | antigravity-cli"
+    },
+    {
+      "name": "email",
+      "type": "String",
+      "isArray": false,
+      "description": "Email being proven, lowercased."
+    },
+    {
+      "name": "method",
+      "type": "String",
+      "isArray": false,
+      "description": "google | microsoft | email-code"
+    },
+    {
+      "name": "nonce",
+      "type": "String",
+      "isArray": false,
+      "description": "OIDC nonce the ID token must carry (google / microsoft). Never readable by browser users."
+    },
+    {
+      "name": "codeHash",
+      "type": "String",
+      "isArray": false,
+      "description": "SHA-256 of the mailed code (email-code). Never readable by browser users."
+    },
+    {
+      "name": "attempts",
+      "type": "Int",
+      "isArray": false,
+      "description": "Wrong codes entered so far (max 5)."
+    },
+    {
+      "name": "createdAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC creation time (rate limit: 5 starts per 15 minutes per user)."
+    },
+    {
+      "name": "expiresAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC expiry, 10 minutes after creation."
+    },
+    {
+      "name": "usedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "Set once the challenge is used up (success, failed sign-in, or last wrong code)."
+    },
+    {
+      "name": "codeMailed",
+      "type": "Boolean",
+      "isArray": false,
+      "description": "True when a 6-digit code was mailed to the address (written for audit)."
+    },
+    {
+      "name": "verified",
+      "type": "Boolean",
+      "isArray": false,
+      "description": "True when the challenge was successfully completed (written for audit)."
+    }
+  ]
+}

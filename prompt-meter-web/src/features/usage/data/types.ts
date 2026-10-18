@@ -54,6 +54,9 @@ export type UsageEvent = TokenFields & {
   /** Owner-only column; null/absent when hidden or the key has previews off. */
   promptPreview?: string | null;
   projectTag: string | null;
+  /** Tool account the proxy detected; verified when the user connected that account. */
+  accountEmail?: string | null;
+  accountVerified?: boolean | null;
   /** UTC ISO. */
   occurredAt: string;
   /** UTC ISO. */

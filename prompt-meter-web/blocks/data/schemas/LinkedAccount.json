@@ -1,0 +1,43 @@
+{
+  "schemaName": "LinkedAccount",
+  "collectionName": "LinkedAccounts",
+  "schemaType": 1,
+  "fields": [
+    {
+      "name": "userId",
+      "type": "String",
+      "isArray": false,
+      "description": "Portal user the tool account belongs to (from the caller's login, set by link-complete)."
+    },
+    {
+      "name": "tool",
+      "type": "String",
+      "isArray": false,
+      "description": "claude-code | codex | antigravity-cli"
+    },
+    {
+      "name": "email",
+      "type": "String",
+      "isArray": false,
+      "description": "The tool account's email, lowercased. Unique per tool (index tool_email_unique)."
+    },
+    {
+      "name": "method",
+      "type": "String",
+      "isArray": false,
+      "description": "How ownership was proven: google | microsoft | email-code"
+    },
+    {
+      "name": "providerSubject",
+      "type": "String",
+      "isArray": false,
+      "description": "The provider's subject id (sub) for google / microsoft; null for email-code."
+    },
+    {
+      "name": "verifiedAt",
+      "type": "DateTime",
+      "isArray": false,
+      "description": "UTC time the proof was checked."
+    }
+  ]
+}

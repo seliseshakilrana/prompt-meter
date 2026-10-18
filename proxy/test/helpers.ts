@@ -4,6 +4,7 @@ import { createProxyServer } from "../src/proxy.js";
 import { MemorySink } from "../src/sinks.js";
 import { PromptTracker } from "../src/grouping.js";
 import type { Config } from "../src/config.js";
+import type { AccountResolver } from "../src/accounts.js";
 import { setLogLevel } from "../src/log.js";
 
 setLogLevel((process.env.PM_TEST_LOG as never) ?? "silent");
@@ -65,6 +66,7 @@ export interface TestProxy {
 export async function startProxy(
   upstreamUrl: string,
   config: Partial<Pick<Config, "defaultKey" | "keys" | "sendPreview" | "sessionGapMinutes">> = {},
+  accounts?: AccountResolver,
 ): Promise<TestProxy> {
   const sink = new MemorySink();
   const tracker = new PromptTracker((config.sessionGapMinutes ?? 30) * 60_000);
@@ -78,6 +80,7 @@ export async function startProxy(
     },
     sink,
     tracker,
+    accounts,
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
   const port = (server.address() as AddressInfo).port;
