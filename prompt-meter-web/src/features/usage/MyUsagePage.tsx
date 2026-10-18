@@ -55,9 +55,16 @@ export default function MyUsagePage() {
   const hourlyRows = hourlyQuery.data ?? [];
   const events = eventsQuery.data?.items ?? [];
 
-  // Available filter options discovered from data
   const distinctTools = useMemo(() => distinctValues(hourlyRows, "tool"), [hourlyRows]);
   const distinctTeams = useMemo(() => distinctValues(hourlyRows, "teamId"), [hourlyRows]);
+
+  const toolOptions = useMemo(() => {
+    const list = ["antigravity-cli", "claude-code", "codex"];
+    for (const t of distinctTools) {
+      if (!list.includes(t)) list.push(t);
+    }
+    return list;
+  }, [distinctTools]);
 
   // Aggregate metrics
   const totals = useMemo(() => summarize(hourlyRows, range, events), [hourlyRows, range, events]);
@@ -113,7 +120,7 @@ export default function MyUsagePage() {
             onChange={(e) => setToolFilter(e.target.value)}
           >
             <option value="">All Tools</option>
-            {distinctTools.map((tool) => (
+            {toolOptions.map((tool) => (
               <option key={tool} value={tool}>
                 {toolLabel(tool)}
               </option>

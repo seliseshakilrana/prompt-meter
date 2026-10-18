@@ -2,9 +2,9 @@ import type { UsageDataSource } from "./types";
 
 export type DataSourceKind = "blocks" | "sample";
 
-/** VITE_PM_DATA_SOURCE=sample|blocks (default sample until the schemas are live). */
+/** VITE_PM_DATA_SOURCE=sample|blocks (defaults to blocks live data). */
 export function configuredDataSourceKind(raw: string | undefined = import.meta.env.VITE_PM_DATA_SOURCE): DataSourceKind {
-  return raw === "blocks" ? "blocks" : "sample";
+  return raw === "sample" ? "sample" : "blocks";
 }
 
 export const dataSourceKind = configuredDataSourceKind();
